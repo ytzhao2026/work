@@ -1,0 +1,40 @@
+{
+  "updatedAt": "2026-07-30T15:43:12.477Z",
+  "english": {
+    "source": "builtin",
+    "note": "使用内置21天外贸场景池，每日自动轮换",
+    "hotKeywords": [
+      "MOQ(最小起订量)",
+      "FOB(离岸价)",
+      "CIF(到岸价)",
+      "Lead time(交期)",
+      "OEM代工",
+      "ODM设计",
+      "Incoterms贸易术语",
+      "PI形式发票",
+      "SC销售确认",
+      "B/L提单",
+      "T/T电汇",
+      "L/C信用证",
+      "Sample样品",
+      "Packing list装箱单",
+      "Customs clearance清关",
+      "Quality inspection验货",
+      "Warranty质保",
+      "After-sales售后"
+    ]
+  },
+  "body": {
+    "source": "builtin",
+    "note": "使用内置4周体态轮换池（圆肩/小腿/减压/骨盆）"
+  },
+  "books": {
+    "source": "builtin",
+    "note": "使用内置7学科书单池，每月3本渐进推荐"
+  },
+  "trends": {
+    "alibaba": null,
+    "customs": null,
+    "fetchedAt": "2026-07-30T15:43:12.477Z"
+  }
+}
