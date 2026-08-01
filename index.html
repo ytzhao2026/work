@@ -1299,5 +1299,13 @@ $('#content').addEventListener('scroll',e=>{$('#totop').style.display=e.target.s
 $('#verStamp').textContent = '📌更新 ' + BUILD_DATE;
 render('plan');
 </script>
+<script>
+/* ============ 离线缓存（Service Worker） ============ */
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').then(function(r){
+    console.log('[SW] 已注册, scope:', r.scope);
+  }).catch(function(e){ console.warn('[SW] 注册失败:', e); });
+}
+</script>
 </body>
 </html>
