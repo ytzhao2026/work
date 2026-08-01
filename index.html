@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#5a9e7e">
+<title>个人自律工作台</title>
+<style>
+  :root{
+    --green-50:#f1f8f4;
+    --green-100:#e3f1ea;
+    --green-200:#c6e3d3;
+    --green-300:#9fceb2;
+    --green-400:#74b692;
+    --green-500:#5a9e7e;
+    --green-600:#47815f;
+    --green-700:#38654a;
+    --ink:#2c3a32;
+    --muted:#7c8b81;
+    --bg:#f7faf8;
+    --card:#ffffff;
+    --line:#e6efe9;
+    --shadow:0 4px 18px rgba(70,129,95,.08);
+    --radius:14px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--ink);font-size:15px;line-height:1.6;
+    overflow-x:hidden;
+  }
+  .app{display:flex;min-height:100vh;}
+
+  /* ---- 侧边栏 ---- */
+  .sidebar{
+    width:208px;flex:0 0 208px;background:linear-gradient(180deg,var(--green-600),var(--green-700));
+    color:#eaf4ee;display:flex;flex-direction:column;transition:width .28s ease,flex-basis .28s ease;
+    position:sticky;top:0;height:100vh;overflow:hidden;
+  }
+  .sidebar.collapsed{width:60px;flex-basis:60px;}
+  .brand{
+    display:flex;align-items:center;gap:10px;padding:18px 16px;font-weight:700;font-size:16px;
+    border-bottom:1px solid rgba(255,255,255,.12);white-space:nowrap;
+  }
+  .brand .logo{width:28px;height:28px;border-radius:8px;background:#fff;color:var(--green-600);
+    display:flex;align-items:center;justify-content:center;font-size:16px;flex:0 0 28px;}
+  .sidebar.collapsed .brand span{opacity:0;}
+  .nav{flex:1;overflow-y:auto;padding:10px 8px;}
+  .nav-item{
+    display:flex;align-items:center;gap:12px;padding:12px 12px;border-radius:10px;cursor:pointer;
+    margin-bottom:4px;color:#e3f1ea;white-space:nowrap;transition:background .2s;font-size:14.5px;
+  }
+  .nav-item .ico{width:28px;height:28px;flex:0 0 28px;display:flex;align-items:center;justify-content:center;border-radius:8px;overflow:hidden;background:#fff3;}
+  .nav-item .ico img{width:100%;height:100%;object-fit:cover;border-radius:6px;}
+  .nav-item.active .ico{background:none;}
+  .nav-item .txt{opacity:1;transition:opacity .2s;}
+  .sidebar.collapsed .nav-item .txt{opacity:0;width:0;overflow:hidden;}
+  .nav-item:hover{background:rgba(255,255,255,.10);}
+  .nav-item.active{background:#fff;color:var(--green-700);font-weight:600;
+    box-shadow:0 2px 8px rgba(0,0,0,.08);}
+  .toggle{
+    padding:14px 16px;border-top:1px solid rgba(255,255,255,.12);cursor:pointer;
+    display:flex;align-items:center;gap:10px;font-size:13px;color:#d4ead0;white-space:nowrap;
+  }
+  .toggle .ico{flex:0 0 22px;text-align:center;font-size:16px;}
+  .sidebar.collapsed .toggle .txt{opacity:0;width:0;overflow:hidden;}
+
+  /* ---- 主区域 ---- */
+  .main{flex:1;min-width:0;display:flex;flex-direction:column;height:100vh;}
+  .topbar{
+    position:sticky;top:0;z-index:5;background:rgba(247,250,248,.92);backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);padding:14px 18px;display:flex;align-items:center;gap:12px;
+  }
+  .menu-btn{display:none;background:var(--green-100);border:none;color:var(--green-700);
+    width:38px;height:38px;border-radius:10px;font-size:18px;cursor:pointer;}
+  .topbar h1{font-size:17px;margin:0;font-weight:700;color:var(--green-700);}
+  .top-right{margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0;}
+  .topbar .date{font-size:12px;color:var(--muted);}
+  .topbar .ver{font-size:10.5px;color:var(--green-600);background:var(--green-100);
+    padding:2px 7px;border-radius:20px;font-weight:600;white-space:nowrap;}
+  .content{flex:1;overflow-y:auto;padding:18px;padding-bottom:40px;}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px 16px;margin-bottom:14px;box-shadow:var(--shadow);}
+  .section-title{font-size:16px;font-weight:700;color:var(--green-700);margin:0 0 4px;
+    display:flex;align-items:center;gap:8px;}
+  .section-sub{font-size:12.5px;color:var(--muted);margin:0 0 12px;}
+  .pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;
+    background:var(--green-100);color:var(--green-600);margin-left:6px;}
+
+  .tag{display:inline-block;font-size:11px;padding:2px 9px;border-radius:20px;font-weight:600;}
+  .tag-a{background:#fde8e8;color:#c0392b;}
+  .tag-b{background:#fef3da;color:#b9770e;}
+  .tag-c{background:#e6efe9;color:#47815f;}
+
+  .task{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px dashed var(--line);}
+  .task:last-child{border-bottom:none;}
+  .task .num{flex:0 0 24px;height:24px;border-radius:50%;background:var(--green-500);color:#fff;
+    font-size:12px;display:flex;align-items:center;justify-content:center;font-weight:700;margin-top:2px;}
+  .task .body{flex:1;}
+  .task .t{font-weight:600;color:var(--ink);}
+  .task .r{font-size:12.5px;color:var(--muted);margin-top:2px;}
+  .cat{font-size:11px;color:var(--green-600);font-weight:600;}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .mini{background:var(--green-50);border:1px solid var(--line);border-radius:10px;padding:10px 12px;}
+  .mini .k{font-size:11.5px;color:var(--muted);}
+  .mini .v{font-size:15px;font-weight:700;color:var(--green-700);}
+
+  .btn{background:var(--green-500);color:#fff;border:none;border-radius:10px;padding:9px 14px;
+    font-size:14px;cursor:pointer;font-weight:600;transition:background .2s;}
+  .btn:active{background:var(--green-600);}
+  .btn.ghost{background:var(--green-100);color:var(--green-700);}
+  .btn.sm{padding:6px 10px;font-size:12.5px;}
+  .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+
+  textarea,input,select{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;
+    font-size:14px;font-family:inherit;background:#fff;color:var(--ink);margin-top:6px;outline:none;}
+  textarea:focus,input:focus,select:focus{border-color:var(--green-400);}
+  label{font-size:12.5px;color:var(--muted);font-weight:600;display:block;margin-top:10px;}
+
+  .list-row{display:flex;gap:10px;align-items:center;padding:10px;border:1px solid var(--line);
+    border-radius:10px;margin-bottom:8px;background:#fff;}
+  .list-row .info{flex:1;min-width:0;}
+  .list-row .info .t{font-weight:600;font-size:14px;}
+  .list-row .info .s{font-size:12px;color:var(--muted);}
+  .list-row .del{background:#fde8e8;color:#c0392b;border:none;border-radius:8px;padding:5px 9px;
+    font-size:12px;cursor:pointer;flex:0 0 auto;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px;}
+  th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);}
+  th{color:var(--green-600);font-weight:600;font-size:12px;}
+
+  .quote{background:var(--green-50);border-left:3px solid var(--green-400);border-radius:8px;
+    padding:10px 12px;font-size:13px;color:var(--ink);margin:8px 0;}
+  .empty{text-align:center;color:var(--muted);font-size:13px;padding:14px;}
+
+  /* ---- 视频 / 外链卡片 ---- */
+  .vcard{display:flex;gap:12px;align-items:center;background:#fff;border:1px solid var(--line);
+    border-radius:12px;padding:11px 12px;margin-bottom:10px;box-shadow:0 2px 8px rgba(70,129,95,.05);}
+  .vcard .thumb{flex:0 0 64px;width:64px;height:64px;border-radius:10px;display:flex;align-items:center;
+    justify-content:center;font-size:26px;color:#fff;overflow:hidden;}
+  .vcard .vmeta{flex:1;min-width:0;}
+  .vcard .vtitle{font-weight:600;font-size:13.5px;color:var(--ink);line-height:1.35;}
+  .vcard .vsub{font-size:11.5px;color:var(--muted);margin-top:3px;}
+  .vcard .vopen{flex:0 0 auto;background:var(--green-500);color:#fff;border:none;border-radius:9px;
+    padding:7px 11px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;}
+  .vcard .vopen:active{background:var(--green-600);}
+  .vcard.focus{border-color:var(--green-500);box-shadow:0 0 0 2px rgba(90,158,126,.22);background:var(--green-50);}
+  .badge{display:inline-block;font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;
+    margin-right:6px;vertical-align:middle;color:#fff;}
+  .badge.bili{background:#fb7299;}
+  .badge.xhs{background:#ff2742;}
+  .badge.dy{background:#000;}
+  .badge.blog{background:#47815f;}
+  .badge.yt{background:#ff0000;}
+
+  /* ---- 书单分类 ---- */
+  .bookcase{margin-bottom:14px;}
+  .bookcase .bk-h{font-weight:700;font-size:13.5px;color:var(--green-700);margin-bottom:8px;
+    display:flex;align-items:center;gap:6px;}
+  .bookcase .bk-h .dot{width:8px;height:8px;border-radius:50%;background:var(--green-400);flex:0 0 8px;}
+  .book{display:flex;gap:11px;align-items:flex-start;background:#fff;border:1px solid var(--line);
+    border-radius:11px;padding:10px 11px;margin-bottom:8px;box-shadow:0 2px 8px rgba(70,129,95,.05);}
+  .book .cover{flex:0 0 40px;width:40px;height:54px;border-radius:6px;display:flex;align-items:center;
+    justify-content:center;font-size:20px;color:#fff;font-weight:700;}
+  .book .binfo{flex:1;min-width:0;}
+  .book .bt{font-weight:700;font-size:13.5px;color:var(--ink);}
+  .book .ba{font-size:11.5px;color:var(--muted);margin:2px 0 4px;}
+  .book .bd{font-size:12px;color:#4a5a50;line-height:1.45;}
+  .book .blink{display:inline-block;margin-top:5px;font-size:11.5px;color:var(--green-600);
+    text-decoration:none;font-weight:600;cursor:pointer;}
+
+  .bar{height:8px;border-radius:6px;background:var(--green-100);overflow:hidden;margin-top:6px;}
+  .bar > i{display:block;height:100%;background:var(--green-500);border-radius:6px;}
+
+  /* ---- 历史记录 / 保存输入 ---- */
+  .history-list{margin-top:10px;}
+  .history-item{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);
+    border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff;}
+  .hist-date{flex:0 0 auto;font-size:11px;font-weight:700;color:var(--green-600);
+    background:var(--green-100);border-radius:20px;padding:2px 9px;margin-top:2px;white-space:nowrap;}
+  .hist-content{flex:1;min-width:0;font-size:13px;color:#4a5a50;line-height:1.55;white-space:pre-line;word-break:break-word;}
+  .history-item .del{background:#fde8e8;color:#c0392b;border:none;border-radius:8px;padding:5px 9px;
+    font-size:12px;cursor:pointer;flex:0 0 auto;}
+  .input-group{margin-top:8px;}
+  .input-group label{margin-top:8px;}
+  .save-btn{background:var(--green-600);color:#fff;border:none;border-radius:10px;padding:10px 16px;
+    font-size:14px;cursor:pointer;font-weight:700;transition:background .2s;box-shadow:0 3px 10px rgba(70,129,95,.25);}
+  .save-btn:active{background:var(--green-700);}
+  .month-card{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px;
+    background:var(--green-50);}
+  .month-card .mc-h{font-weight:700;font-size:13.5px;color:var(--green-700);margin-bottom:6px;
+    display:flex;align-items:center;justify-content:space-between;gap:8px;}
+
+  .totop{position:fixed;right:18px;bottom:22px;width:46px;height:46px;border-radius:50%;
+    background:var(--green-500);color:#fff;border:none;font-size:20px;cursor:pointer;
+    box-shadow:0 6px 16px rgba(70,129,95,.35);display:none;z-index:20;}
+
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:8;display:none;}
+  .overlay.show{display:block;}
+
+  /* 手机适配：菜单栏顶部横向铺开，不折叠 */
+  @media (max-width:720px){
+    .app{flex-direction:row!important;align-items:stretch;}
+    .sidebar{position:sticky;top:0;left:0;width:128px!important;flex:0 0 128px!important;height:100vh!important;
+      flex-direction:column!important;overflow:visible;z-index:20;
+      background:linear-gradient(180deg,var(--green-600),var(--green-700));}
+    .brand{display:flex!important;padding:14px 10px;font-size:13px;justify-content:center;text-align:center;}
+    .brand .logo{display:none;}
+    .nav{display:flex!important;flex-direction:column!important;overflow-y:auto;overflow-x:hidden;
+      padding:8px 6px!important;gap:0;scrollbar-width:thin;}
+    .nav::-webkit-scrollbar{width:3px;}
+    .nav-item{flex:0 0 auto!important;display:flex!important;flex-direction:row!important;gap:8px!important;
+      align-items:center;padding:11px 8px!important;margin-bottom:4px!important;border-radius:10px!important;
+      text-align:left!important;min-width:0!important;width:100%!important;background:transparent!important;}
+    .nav-item .ico{width:26px!important;height:26px!important;flex:0 0 26px!important;}
+    .nav-item .txt{font-size:12.5px!important;opacity:1!important;width:auto!important;overflow:visible!important;
+      white-space:nowrap!important;color:#eaf4ee!important;}
+    .nav-item.active{background:#fff!important;color:var(--green-700)!important;
+      box-shadow:0 2px 8px rgba(0,0,0,.1)!important;}
+    .nav-item.active .txt{color:var(--green-700)!important;font-weight:600!important;}
+    .menu-btn{display:none!important;}
+    .main{height:100vh!important;min-height:0;flex:1;min-width:0;}
+    .topbar{position:sticky;top:0;padding:10px 14px;}
+    .topbar h1{font-size:15px;}
+    .content{padding:12px;padding-bottom:40px;overflow-y:auto;}
+    .grid2{grid-template-columns:1fr;}
+    .card{border-radius:12px;padding:14px;}
+  }
+  .hidden{display:none!important;}
+  .fade{animation:fade .3s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- 侧边栏 -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><span class="logo">🌿</span><span>自律工作台</span></div>
+    <nav class="nav" id="nav">
+      <div class="nav-item active" data-key="plan"><span class="ico"><svg viewBox="0 0 48 48" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="24" cy="26" r="20" fill="#d8f0e2"/>
+    <path d="M14 30 Q24 38 34 30" stroke="#000" stroke-width="1.2" fill="none" opacity=".12"/>
+    <path d="M24 6 Q26 2 23 4 Q22 6 24 7" stroke="#caa" stroke-width="1.5" fill="none"/>
+    <path d="M10 22 Q12 10 24 9 Q36 10 38 22 Q34 16 24 16 Q14 16 10 22Z" fill="#7bbf9a"/>
+    <ellipse cx="24" cy="27" rx="14" ry="13" fill="#ffe9d6"/>
+    <circle cx="16" cy="30" r="2.6" fill="#ffb3a7" opacity=".7"/>
+    <circle cx="32" cy="30" r="2.6" fill="#ffb3a7" opacity=".7"/>
+    <circle cx="19" cy="26" r="1.8" fill="#3a3a3a"/>
+    <circle cx="29" cy="26" r="1.8" fill="#3a3a3a"/>
+    <path d="M21 31 Q24 34 27 31" stroke="#c0392b" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    <rect x="33" y="6" width="11" height="9" rx="2" fill="#fff" stroke="#5a9e7e" stroke-width="1"/><line x1="36" y1="10" x2="41" y2="10" stroke="#5a9e7e" stroke-width="1"/><line x1="38.5" y1="8" x2="38.5" y2="13" stroke="#5a9e7e" stroke-width="1"/>
+  </svg></span><span class="txt">每日计划</span></div>
+      <div class="nav-item" data-key="ledger"><span class="ico"><svg viewBox="0 0 48 48" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="24" cy="26" r="20" fill="#cfe3f5"/>
+    <path d="M14 30 Q24 38 34 30" stroke="#000" stroke-width="1.2" fill="none" opacity=".12"/>
+    <path d="M24 6 Q26 2 23 4 Q22 6 24 7" stroke="#caa" stroke-width="1.5" fill="none"/>
+    <path d="M10 22 Q12 10 24 9 Q36 10 38 22 Q34 16 24 16 Q14 16 10 22Z" fill="#6fa8d6"/>
+    <ellipse cx="24" cy="27" rx="14" ry="13" fill="#ffe9d6"/>
+    <circle cx="16" cy="30" r="2.6" fill="#ffb3a7" opacity=".7"/>
+    <circle cx="32" cy="30" r="2.6" fill="#ffb3a7" opacity=".7"/>
+    <circle cx="19" cy="26" r="1.8" fill="#3a3a3a"/>
+    <circle cx="29" cy="26" r="1.8" fill="#3a3a3a"/>
+    <path d="M21 31 Q24 34 27 31" stroke="#c0392b" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    <rect x="32" y="7" width="11" height="12" rx="1.5" fill="#fff" stroke="#4781a0" stroke-width="1"/><line x1="34" y1="11" x2="41" y2="11" stroke="#4781a0" stroke-width="1"/><line x1="34" y1="14" x2="41" y2="14" stroke="#4781a0" stroke-width="1"/>
+  </svg></span><span class="txt">工作台账</span></div>
+      <div class="nav-item" data-key="english"><span class="ico"><svg viewBox="0 0 48 48" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="24" cy="26" r="20" fill="#e3ddf5"/>
+    <path d="M14 30 Q24 38 34 30" stroke="#000" stroke-width="1.2" fill="none" opacity=".12"/>
+    <path d="M24 6 Q26 2 23 4 Q22 6 24 7" stroke="#caa" stroke-width="1.5" fill="none"/>
+    <path d="M10 22 Q12 10 24 9 Q36 10 38 22 Q34 16 24 16 Q14 16 10 22Z" fill="#9b8fd6"/>
+    <ellipse cx="24" cy="27" rx="14" ry="13" fill="#ffe9d6"/>
+    <circle cx="16" cy="30" r="2.6" fill="#ffb3a7" opacity=".7"/>
+    <circle cx="32" cy="30" r="2.6" fill="#ffb3a7" opacity=".7"/>
+    <circle cx="19" cy="26" r="1.8" fill="#3a3a3a"/>
+    <circle cx="29" cy="26" r="1.8" fill="#3a3a3a"/>
+    <path d="M21 31 Q24 34 27 31" stroke="#c0392b" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    <circle cx="38" cy="13" r="7" fill="#fff" stroke="#6a5acd" stroke-width="1"/><path d="M35 13 l2 2 l4 -4" stroke="#6a5acd" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+  </svg></span><span class="txt">商务英语</span></div>
+      <div class="nav-item" data-key="reading"><span class="ico"><svg viewBox="0 0 48 48" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="24" cy="26" r="20" fill="#f5ecd8"/>
+    <path d="M14 30 Q24 38 34 30" stroke="#000" stroke-width="1.2" fill="none" opacity=".12"/>
+    <path d="M24 6 Q26 2 23 4 Q22 6 24 7" stroke="#caa" stroke-width="1.5" fill="none"/>
+    <path d="M10 22 Q12 10 24 9 Q36 10 38 22 Q34 16 24 16 Q14 16 10 22Z" fill="#d6b46f"/>
+    <ellipse cx="24" cy="27" rx="14" ry="13" fill="#ffe9d6"/>
+    <circle cx="16" cy="30" r="2.6" fill="#ffb3a7" opacity=".7"/>
+    <circle cx="32" cy="30" r="2.6" fill="#ffb3a7" opacity=".7"/>
+    <circle cx="19" cy="26" r="1.8" fill="#3a3a3a"/>
+    <circle cx="29" cy="26" r="1.8" fill="#3a3a3a"/>
+    <path d="M21 31 Q24 34 27 31" stroke="#c0392b" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    <rect x="32" y="8" width="9" height="12" rx="1" fill="#fff" stroke="#b8860b" stroke-width="1"/><line x1="34" y1="11" x2="39" y2="11" stroke="#b8860b" stroke-width="1"/><line x1="34" y1="14" x2="39" y2="14" stroke="#b8860b" stroke-width="1"/>
+  </svg></span><span class="txt">阅读总结</span></div>
+      <div class="nav-item" data-key="money"><span class="ico"><svg viewBox="0 0 48 48" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="24" cy="26" r="20" fill="#d8f0e2"/>
+    <path d="M14 30 Q24 38 34 30" stroke="#000" stroke-width="1.2" fill="none" opacity=".12"/>
+    <path d="M24 6 Q26 2 23 4 Q22 6 24 7" stroke="#caa" stroke-width="1.5" fill="none"/>
+    <path d="M10 22 Q12 10 24 9 Q36 10 38 22 Q34 16 24 16 Q14 16 10 22Z" fill="#7bbf9a"/>
+    <ellipse cx="24" cy="27" rx="14" ry="13" fill="#ffe9d6"/>
+    <circle cx="16" cy="30" r="2.6" fill="#ffb3a7" opacity=".7"/>
+    <circle cx="32" cy="30" r="2.6" fill="#ffb3a7" opacity=".7"/>
+    <circle cx="19" cy="26" r="1.8" fill="#3a3a3a"/>
+    <circle cx="29" cy="26" r="1.8" fill="#3a3a3a"/>
+    <path d="M21 31 Q24 34 27 31" stroke="#c0392b" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    <circle cx="38" cy="13" r="7" fill="#ffd54f" stroke="#b8860b" stroke-width="1"/><text x="38" y="16" font-size="8" text-anchor="middle" fill="#b8860b" font-weight="bold">Y</text>
+  </svg></span><span class="txt">记账存钱</span></div>
+      <div class="nav-item" data-key="body"><span class="ico"><svg viewBox="0 0 48 48" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="24" cy="26" r="20" fill="#e8f5d8"/>
+    <path d="M14 30 Q24 38 34 30" stroke="#000" stroke-width="1.2" fill="none" opacity=".12"/>
+    <path d="M24 6 Q26 2 23 4 Q22 6 24 7" stroke="#caa" stroke-width="1.5" fill="none"/>
+    <path d="M10 22 Q12 10 24 9 Q36 10 38 22 Q34 16 24 16 Q14 16 10 22Z" fill="#a3c96f"/>
+    <ellipse cx="24" cy="27" rx="14" ry="13" fill="#ffe9d6"/>
+    <circle cx="16" cy="30" r="2.6" fill="#ffb3a7" opacity=".7"/>
+    <circle cx="32" cy="30" r="2.6" fill="#ffb3a7" opacity=".7"/>
+    <circle cx="19" cy="26" r="1.8" fill="#3a3a3a"/>
+    <circle cx="29" cy="26" r="1.8" fill="#3a3a3a"/>
+    <path d="M21 31 Q24 34 27 31" stroke="#c0392b" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    <circle cx="38" cy="13" r="6.5" fill="#fff" stroke="#7a9e3f" stroke-width="1"/><path d="M35 13 l2 2 l4 -4" stroke="#7a9e3f" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+  </svg></span><span class="txt">体态管理</span></div>
+      <div class="nav-item" data-key="mood"><span class="ico"><svg viewBox="0 0 48 48" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="24" cy="26" r="20" fill="#f5d8e3"/>
+    <path d="M14 30 Q24 38 34 30" stroke="#000" stroke-width="1.2" fill="none" opacity=".12"/>
+    <path d="M24 6 Q26 2 23 4 Q22 6 24 7" stroke="#caa" stroke-width="1.5" fill="none"/>
+    <path d="M10 22 Q12 10 24 9 Q36 10 38 22 Q34 16 24 16 Q14 16 10 22Z" fill="#d68fae"/>
+    <ellipse cx="24" cy="27" rx="14" ry="13" fill="#ffe9d6"/>
+    <circle cx="16" cy="30" r="2.6" fill="#ffb3a7" opacity=".7"/>
+    <circle cx="32" cy="30" r="2.6" fill="#ffb3a7" opacity=".7"/>
+    <circle cx="19" cy="26" r="1.8" fill="#3a3a3a"/>
+    <circle cx="29" cy="26" r="1.8" fill="#3a3a3a"/>
+    <path d="M21 31 Q24 34 27 31" stroke="#c0392b" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    <path d="M35 10 q3 -2 6 0" stroke="#c2185b" stroke-width="1.4" fill="none" stroke-linecap="round"/><path d="M35 16 q3 2 6 0" stroke="#c2185b" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+  </svg></span><span class="txt">心情树洞</span></div>
+      <div class="nav-item" data-key="monthly"><span class="ico"><svg viewBox="0 0 48 48" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="24" cy="26" r="20" fill="#d8e3f5"/>
+    <path d="M14 30 Q24 38 34 30" stroke="#000" stroke-width="1.2" fill="none" opacity=".12"/>
+    <path d="M24 6 Q26 2 23 4 Q22 6 24 7" stroke="#caa" stroke-width="1.5" fill="none"/>
+    <path d="M10 22 Q12 10 24 9 Q36 10 38 22 Q34 16 24 16 Q14 16 10 22Z" fill="#6f8fd6"/>
+    <ellipse cx="24" cy="27" rx="14" ry="13" fill="#ffe9d6"/>
+    <circle cx="16" cy="30" r="2.6" fill="#ffb3a7" opacity=".7"/>
+    <circle cx="32" cy="30" r="2.6" fill="#ffb3a7" opacity=".7"/>
+    <circle cx="19" cy="26" r="1.8" fill="#3a3a3a"/>
+    <circle cx="29" cy="26" r="1.8" fill="#3a3a3a"/>
+    <path d="M21 31 Q24 34 27 31" stroke="#c0392b" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    <rect x="32" y="7" width="12" height="13" rx="1.5" fill="#fff" stroke="#4781a0" stroke-width="1"/><path d="M34 12 l2 2 l4 -4" stroke="#4781a0" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+  </svg></span><span class="txt">月度复盘</span></div>
+    </nav>
+  </aside>
+
+  <div class="overlay" id="overlay"></div>
+
+  <!-- 主区域 -->
+  <div class="main">
+    <div class="topbar">
+      <button class="menu-btn" id="menuBtn">☰</button>
+      <h1 id="pageTitle">每日计划</h1>
+      <span class="top-right">
+        <span class="ver" id="verStamp"></span>
+      </span>
+    </div>
+    <div class="content" id="content"><!-- 动态内容 --></div>
+  </div>
+</div>
+<button class="totop" id="totop">↑</button>
+
+<script>
+/* ============ 工具函数 ============ */
+const $ = (s,el=document)=>el.querySelector(s);
+const $$ = (s,el=document)=>[...el.querySelectorAll(s)];
+const todayStr = ()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
+const monthStr = ()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;};
+const weekOfYear = ()=>{const d=new Date();const onejan=new Date(d.getFullYear(),0,1);
+  const daynum=Math.floor((d-onejan)/(24*3600*1000));return Math.ceil((daynum+onejan.getDay()+1)/7);};
+const weekdayCN = ()=>{const g=new Date().getDay();return g===0?7:g;};
+const dayOfYear = ()=>{const d=new Date();const start=new Date(d.getFullYear(),0,0);
+  return Math.floor((d-start)/(24*3600*1000));};
+const monthOfYear = ()=>new Date().getMonth(); /* 0-11 */
+const WD = ['','周一','周二','周三','周四','周五','周六','周日'];
+const BUILD_DATE = '2026-08-01'; /* 工作台代码版本，每次重大更新时修改此日期 */
+const esc = s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const store = {
+  get(k,def){try{const v=localStorage.getItem('zlt_'+k);return v?JSON.parse(v):def;}catch(e){return def;}},
+  set(k,v){localStorage.setItem('zlt_'+k,JSON.stringify(v));}
+};
+
+/* ============ 内置数据（离线兜底，无需网络） ============ */
+const BUILTIN_DATA = {
+  "updatedAt": "2026-07-31",
+  "english": {
+    "source": "builtin", "note": "使用内置21天外贸场景池，每日自动轮换",
+    "hotKeywords": ["MOQ(最小起订量)","FOB(离岸价)","CIF(到岸价)","Lead time(交期)","OEM代工","ODM设计","Incoterms贸易术语","PI形式发票","SC销售确认","B/L提单","T/T电汇","L/C信用证","Sample样品","Packing list装箱单","Customs clearance清关","Quality inspection验货","Warranty质保","After-sales售后"]
+  },
+  "body": { "source": "builtin", "note": "使用内置4周体态轮换池（圆肩/小腿/减压/骨盆）" },
+  "books": { "source": "builtin", "note": "使用内置7学科书单池，每月3本渐进推荐" }
+};
+
+/* ============ 后端数据（在线时覆盖内置数据） ============ */
+let REMOTE = BUILTIN_DATA;
+fetch('/data.json').then(r=>r.ok?r.json():null).then(j=>{
+  if(!j) return;
+  REMOTE = j;
+  const act = $('.nav-item.active');
+  if(act && act.dataset.key==='english') render('english');
+}).catch(()=>{});
+
+/* ============ 商务英语：21天外贸B2B实战场景池 ============ */
+const TRADE21 = [
+  { theme:'询盘初次回复', en:'Inquiry Reply',
+    words:[['inquiry','询盘'],['catalog','产品目录'],['specification','规格参数'],['MOQ','最小起订量'],['unit price','单价'],['lead time','交货周期']],
+    line:['Thank you for your inquiry. May I know your target quantity and market, so I can quote you the best price?','感谢您的询盘。方便告知目标数量和销售市场吗？以便我给您报最优价格。'],
+    dia:[['客','We are interested in your LED work lamps. Could you send more details?'],
+         ['我','Sure. The catalog with full specifications is attached. May I know your target quantity and which market you serve?'],
+         ['客','Around 2,000 pieces for the EU market.'],
+         ['我','Great. For 2,000 pieces we can offer a competitive price with CE certification included. Quotation follows within 24 hours.']] },
+  { theme:'报价单发送', en:'Quotation Sending',
+    words:[['quotation','报价单'],['PI (proforma invoice)','形式发票'],['validity','报价有效期'],['FOB','离岸价'],['payment terms','付款条件'],['price list','价格表']],
+    line:['Please find our quotation attached, based on FOB Shenzhen and valid for 15 days.','请查收报价单，基于深圳离岸价，有效期15天。'],
+    dia:[['客','When can I get your formal quotation for the two models?'],
+         ['我','You will have it today. It is based on FOB Shenzhen, valid for 15 days, with payment terms of 30 percent deposit.'],
+         ['客','Does the price include the export packing?'],
+         ['我','Yes, standard export cartons are included. Custom packaging can be quoted separately.']] },
+  { theme:'价格谈判-客户嫌贵', en:'Price Negotiation - Too Expensive',
+    words:[['target price','目标价'],['margin','利润空间'],['bulk order','大批量订单'],['discount','折扣'],['cost breakdown','成本明细'],['counter-offer','还盘']],
+    line:['If you can raise the quantity to 5,000 pieces, I can apply to management for a 5 percent discount.','如果数量能提到5000件，我可以向管理层申请5%的折扣。'],
+    dia:[['客','Honestly, your price is 10 percent higher than other suppliers.'],
+         ['我','I understand. May I ask which model they quoted? Our price includes a two-year warranty and 100 percent inspection.'],
+         ['客','Still, I need a better number to move forward.'],
+         ['我','Here is my proposal: raise the order to 5,000 pieces, and I will fight for a 5 percent discount plus free samples.']] },
+  { theme:'付款方式协商', en:'Payment Terms - T/T vs L/C',
+    words:[['T/T','电汇'],['L/C at sight','即期信用证'],['deposit','定金'],['balance','尾款'],['B/L copy','提单副本'],['credit risk','信用风险']],
+    line:['Our standard terms are 30 percent T/T deposit, and 70 percent balance against the B/L copy.','我们的标准条款是30%电汇定金，70%尾款凭提单副本支付。'],
+    dia:[['客','Can we pay 100 percent by L/C at 60 days? That is our company policy.'],
+         ['我','For the first order we prefer 30 percent T/T deposit with balance against B/L copy. It keeps the cost lower for both sides.'],
+         ['客','What if we start with L/C at sight instead?'],
+         ['我','L/C at sight works for us. After two smooth orders, we can discuss more flexible terms.']] },
+  { theme:'装运条款确认', en:'Shipping Terms - FOB/CIF',
+    words:[['FOB','离岸价'],['CIF','到岸价'],['freight','运费'],['Incoterms','国际贸易术语'],['port of destination','目的港'],['ETD','预计离港时间']],
+    line:['We can quote CIF Hamburg, which covers ocean freight and insurance all the way to your port.','我们可以报CIF汉堡价，包含到港的海运费和保险。'],
+    dia:[['客','Should we go FOB or CIF for this order?'],
+         ['我','If you have your own forwarder, FOB gives you control. If not, CIF Hamburg saves you the trouble, and we book the vessel.'],
+         ['客','Let us do CIF then. What is the ETD after payment?'],
+         ['我','ETD is about 25 days after the deposit, and I will send the shipping schedule for your confirmation.']] },
+  { theme:'样品寄送安排', en:'Sample Sending',
+    words:[['sample charge','样品费'],['courier','国际快递'],['freight collect','运费到付'],['DHL account','DHL账号'],['sample lead time','打样周期'],['refundable','可退还的']],
+    line:['The sample itself is free. The courier cost will be freight collect on your DHL account, and the charge is refundable after the order.','样品免费，运费到付用您的DHL账号，费用在下单后可退还。'],
+    dia:[['客','Can you send two free samples before we place the order?'],
+         ['我','Yes, samples are free. We only ask freight collect on your courier account. May I have your DHL or FedEx number?'],
+         ['客','Sure, our DHL account is available. How long is the sample lead time?'],
+         ['我','Three working days for stock samples, and seven days if you need your logo printed.']] },
+  { theme:'广交会/展会跟进', en:'Canton Fair Follow-up',
+    words:[['booth','展位'],['business card','名片'],['trial order','试单'],['exhibition','展会'],['follow up','跟进'],['catalogue','产品册']],
+    line:['It was a pleasure meeting you at booth 10.2C31. As discussed, here is the quotation for the two models you shortlisted.','很高兴在10.2C31展位见到您。按约定，附上您选中的两款产品报价。'],
+    dia:[['客','I visited so many booths that I hardly remember the details we discussed.'],
+         ['我','No problem. You picked our solar model SL-80 and asked about waterproof rating. Photos from the booth are attached to refresh your memory.'],
+         ['客','Ah yes, now I remember. Please quote 500 pieces as a trial order.'],
+         ['我','Perfect. A trial order of 500 pieces is accepted, and I will keep the fair-special price for you.']] },
+  { theme:'客户说再考虑', en:'Client Says Think About It',
+    words:[['hesitation','犹豫'],['concern','顾虑'],['comparison','货比三家'],['deadline','截止期限'],['incentive','下单激励'],['follow-up call','跟进电话']],
+    line:['May I know your main concern - price, quality, or lead time? Then I can offer a targeted solution instead of waiting.','方便说说您主要顾虑是价格、质量还是交期吗？我好针对性给方案，而不是干等。'],
+    dia:[['客','Your offer looks fine, but let me think about it and get back to you.'],
+         ['我','Of course. Just so I can help better, is the hesitation more about price or about switching suppliers?'],
+         ['客','Mainly the risk of changing our current supplier.'],
+         ['我','Understood. How about a small trial order of 300 pieces? You keep your current supplier and test us with low risk.']] },
+  { theme:'竞品低价截胡应对', en:'Competitor Undercut Response',
+    words:[['competitor','竞争对手'],['undercut','低价抢单'],['defect rate','不良率'],['total cost','综合成本'],['after-sales','售后服务'],['quality standard','质量标准']],
+    line:['A lower price often means different material. Our defect rate is below 0.5 percent, which saves you far more in the long run.','更低的价格往往意味着不同的用料。我们的不良率低于0.5%，长期反而帮您省更多。'],
+    dia:[['客','Another factory offers the same item 15 percent cheaper. Why should I stay with you?'],
+         ['我','Fair question. Please check their material report and defect rate first. Ours is A-grade aluminum with defects under 0.5 percent.'],
+         ['客','They claim the quality is identical.'],
+         ['我','Then let the samples talk. Send both to a third-party lab, and if ours loses, I will personally match their price.']] },
+  { theme:'订单确认细节', en:'Order Confirmation Details',
+    words:[['SC (sales contract)','销售合同'],['artwork','包装图稿'],['pre-production sample','产前样'],['mass production','大货生产'],['packing details','包装明细'],['confirmation','确认函']],
+    line:['Please sign back the sales contract and confirm the artwork, then we will start the pre-production sample right away.','请回签销售合同并确认图稿，我们马上安排产前样。'],
+    dia:[['客','We are ready to confirm the order of 3,000 pieces. What do you need from us?'],
+         ['我','Three things: the signed sales contract, the confirmed artwork file, and the 30 percent deposit. Then mass production is scheduled.'],
+         ['客','Artwork will be ready tomorrow. Can you send the packing details again?'],
+         ['我','Sure - 20 pieces per carton, gross weight 12 kilograms, and I will include a full packing list in the contract.']] },
+  { theme:'交期延误解释', en:'Delivery Delay Explanation',
+    words:[['delay','延误'],['production schedule','生产排期'],['raw material','原材料'],['partial shipment','分批出运'],['expedite','加急处理'],['compensation','补偿方案']],
+    line:['Due to a raw material delay, we need 7 more days. We can arrange partial shipment first to cover your urgent orders.','由于原材料延迟，交期需再延7天。我们可以先分批发货，保障您的急单。'],
+    dia:[['客','You promised shipment this Friday. My customer is pushing me hard.'],
+         ['我','I sincerely apologize. The aluminum supply arrived late. We are running overtime and can ship 60 percent this Friday as partial shipment.'],
+         ['客','And the remaining 40 percent?'],
+         ['我','Within 7 days, guaranteed in writing. We will also bear the extra document fee as compensation.']] },
+  { theme:'质量投诉处理', en:'Quality Complaint Handling',
+    words:[['claim','索赔'],['defective','有缺陷的'],['inspection report','检验报告'],['root cause','根本原因'],['replacement','补发/换货'],['corrective action','整改措施']],
+    line:['We take this seriously. Please send photos and the batch number, and you will have a solution within 24 hours.','我们非常重视。请提供照片和批次号，24小时内给您解决方案。'],
+    dia:[['客','About 3 percent of the last batch arrived with scratches. We need to file a claim.'],
+         ['我','I am really sorry to hear that. Please share photos and the batch number so we can trace the root cause today.'],
+         ['客','Photos are on the way. What will you do about the defective units?'],
+         ['我','We will replace them free in your next shipment, and add a foam layer as the corrective action. A written report follows.']] },
+  { theme:'新客户开发邮件', en:'Cold Email to New Client',
+    words:[['prospect','潜在客户'],['value proposition','价值主张'],['reference','客户背书'],['OEM','贴牌代工'],['capacity','产能'],['certification','资质认证']],
+    line:['We are an OEM factory serving three of the top ten brands in your market, with a monthly capacity of 500,000 units.','我们是OEM工厂，服务贵国市场前十品牌中的三家，月产能50万件。'],
+    dia:[['客','We receive dozens of supplier emails every week. Why should we reply to yours?'],
+         ['我','Because we already produce for brands you compete with, at the same quality line. I can share a sample from the exact production line.'],
+         ['客','Interesting. What certifications do you hold?'],
+         ['我','ISO9001, BSCI and CE. I will send the audit reports plus a tailored price list for your best-selling category.']] },
+  { theme:'老客户续单跟进', en:'Renewal Follow-up',
+    words:[['repeat order','返单'],['loyal customer','老客户'],['price protection','价格保护'],['forecast','订单预测'],['stock level','库存水位'],['annual contract','年度合同']],
+    line:['Your last batch sold well, right? Place the repeat order this month and I will keep the same price for you despite the material increase.','上一批卖得不错吧？本月内返单，即使原料涨价我也帮您保住原价。'],
+    dia:[['客','We may reorder, but raw material prices seem to be climbing.'],
+         ['我','Exactly why I am writing. Confirm the repeat order before the 25th, and you are protected at the old price.'],
+         ['客','Can you also shorten the lead time this round?'],
+         ['我','For loyal customers we reserve capacity - 18 days instead of 25. Shall I send the updated PI today?']] },
+  { theme:'最小起订量谈判', en:'MOQ Negotiation',
+    words:[['MOQ','最小起订量'],['trial order','试单'],['mixed container','拼柜'],['SKU','单品'],['tooling cost','模具费'],['volume','订单量']],
+    line:['Our MOQ is 1,000 pieces, but for the first cooperation we can accept 500 as a trial order.','我们的起订量是1000件，但首次合作可以接受500件试单。'],
+    dia:[['客','Your MOQ of 1,000 pieces per color is too high for us to start.'],
+         ['我','I hear you. For a new partner, we can do 500 pieces per color if you take two colors, so the line setup still makes sense.'],
+         ['客','Can we mix four SKUs in one container?'],
+         ['我','Yes, mixed container is fine as long as the total reaches 2,000 pieces. That keeps your inventory risk low.']] },
+  { theme:'包装定制要求', en:'Custom Packaging Request',
+    words:[['custom packaging','定制包装'],['logo printing','印制Logo'],['color box','彩盒'],['artwork file','设计源文件'],['plate fee','版费'],['neutral packing','中性包装']],
+    line:['We support custom color boxes with your logo. The plate fee is 200 dollars, refundable once the order reaches 5,000 pieces.','支持定制带Logo的彩盒。版费200美元，订单达5000件即可退还。'],
+    dia:[['客','We want our own brand on the color box. Is that possible?'],
+         ['我','Absolutely. Just send the artwork file in AI or PDF format, and we will print your logo on the color box.'],
+         ['客','Any extra cost for the customization?'],
+         ['我','Only a one-time plate fee of 200 dollars, and it is refunded when your accumulated order hits 5,000 pieces.']] },
+  { theme:'认证文件提供', en:'Certification Documents',
+    words:[['CE certificate','CE认证'],['RoHS','环保认证'],['test report','检测报告'],['compliance','合规'],['FDA','美国食药监认证'],['certificate of origin','原产地证']],
+    line:['All models are CE and RoHS certified. I will send the full test reports for your customs and market compliance.','所有型号均有CE和RoHS认证。我会发送完整检测报告，供您清关和市场合规使用。'],
+    dia:[['客','Our importer requires CE, RoHS and the certificate of origin. Can you provide all of them?'],
+         ['我','Yes. CE and RoHS reports are ready, and the certificate of origin will be issued with each shipment.'],
+         ['客','Are the reports from a recognized lab?'],
+         ['我','They are issued by TUV and SGS, both accepted across the EU. Scanned copies are on the way to your inbox.']] },
+  { theme:'海关清关协助', en:'Customs Clearance Support',
+    words:[['customs clearance','清关'],['B/L','海运提单'],['packing list','装箱单'],['commercial invoice','商业发票'],['HS code','海关编码'],['import duty','进口关税']],
+    line:['We will provide the B/L, commercial invoice and packing list with the correct HS code to ensure smooth clearance.','我们会提供提单、商业发票和装箱单，并标注正确的海关编码，确保顺利清关。'],
+    dia:[['客','Last time the goods were stuck at customs for a week. How do we avoid that?'],
+         ['我','Usually it is an HS code mismatch. Send me your local code, and we will align all documents before shipping.'],
+         ['客','Also, can you declare the invoice in our company name?'],
+         ['我','Yes, the commercial invoice, packing list and B/L consignee will all follow your instructions exactly.']] },
+  { theme:'售后技术支持', en:'After-sales Technical Support',
+    words:[['technical support','技术支持'],['user manual','用户手册'],['warranty','质保'],['spare parts','备用配件'],['remote guidance','远程指导'],['troubleshooting','故障排查']],
+    line:['The product carries a two-year warranty, and our engineers respond with remote guidance within 12 hours.','产品提供两年质保，工程师12小时内提供远程指导。'],
+    dia:[['客','If the machines break down on our side, how fast can you support us?'],
+         ['我','Within 12 hours by video call for troubleshooting, and we ship 2 percent free spare parts with every order.'],
+         ['客','What does the warranty actually cover?'],
+         ['我','Two years on all electronic parts. Any confirmed defect, we send replacements by express at our cost.']] },
+  { theme:'年底/节日促销推文', en:'Holiday Promotion Pitch',
+    words:[['promotion','促销'],['year-end','年底'],['stock clearance','清库存'],['special offer','特价'],['order deadline','下单截止日'],['peak season','销售旺季']],
+    line:['Our year-end promotion gives 8 percent off all orders confirmed before December 15 - perfect timing to stock up for the peak season.','年底促销：12月15日前确认的订单一律92折，正好为旺季备货。'],
+    dia:[['客','We were not planning to buy until next quarter, to be honest.'],
+         ['我','That is exactly why this offer matters: lock the 8 percent discount now, and we can hold shipment until January for free.'],
+         ['客','Hold the goods until January at no cost? Interesting.'],
+         ['我','Yes, free 30-day warehousing. You get the promo price and the cash flow stays comfortable. Deadline is December 15.']] },
+  { theme:'长期合作框架协议', en:'Long-term Cooperation Framework',
+    words:[['framework agreement','框架协议'],['exclusive agency','独家代理'],['annual volume','年采购量'],['rebate','年终返点'],['ODM','原始设计制造'],['strategic partner','战略合作伙伴']],
+    line:['Based on an annual volume of 50,000 units, we can offer a 2 percent rebate and priority production slots.','基于5万件的年采购量，我们可以提供2%的年终返点和优先排产。'],
+    dia:[['客','We want to discuss a yearly framework instead of ordering batch by batch.'],
+         ['我','Excellent idea. With a committed annual volume, you get price protection, a 2 percent rebate and first priority in peak season.'],
+         ['客','Could we also talk about exclusive agency for our country?'],
+         ['我','Yes, once the annual volume passes 80,000 units, exclusive agency plus ODM support is on the table. Let me draft the framework agreement.']] }
+];
+
+/* ============ 阅读书单：7大学科 · 每月3本渐进循环 ============ */
+const BOOK_CATS = [
+  { name:'① 哲学与底层世界观', emo:'🧭', grad:'linear-gradient(135deg,#5a9e7e,#74b692)',
+    role:'提供判断框架、看透本质与规律、处理不确定性、建立价值观',
+    solve:'人生方向、价值判断、看透规律', value:'提升格局、避免迷茫',
+    books:[['道德经','老子'],['周易','佚名'],['善恶的彼岸','尼采'],['君主论','马基雅维利'],['毛泽东选集','毛泽东']] },
+  { name:'② 历史与权力运行', emo:'🏛️', grad:'linear-gradient(135deg,#caa45a,#d8c08a)',
+    role:'看周期兴衰、看权力与利益博弈、借鉴经验、避免重蹈覆辙',
+    solve:'看清历史规律、理解权力结构与人性博弈', value:'以史为鉴、把握趋势',
+    books:[['资治通鉴','司马光'],['全球通史','斯塔夫里阿诺斯'],['二十四史（精读本）','多人合著']] },
+  { name:'③ 心理学与人性', emo:'🧠', grad:'linear-gradient(135deg,#6fa8d6,#9fceb2)',
+    role:'洞察人性弱点、影响他人决策、提高沟通与成交率',
+    solve:'人际关系、谈判沟通、影响他人', value:'提升情商、掌控局面',
+    books:[['人性的弱点','卡耐基'],['乌合之众','古斯塔夫·勒庞'],['思考，快与慢','丹尼尔·卡尼曼'],['鬼谷子','鬼谷子']] },
+  { name:'④ 社会结构与中国现实', emo:'🏘️', grad:'linear-gradient(135deg,#a3c96f,#c6e3d3)',
+    role:'理解中国社会结构、洞察地域与阶层差异、看清资源分配逻辑、判断现实机会',
+    solve:'认清位置、判断现实机会', value:'接地气、少走弯路',
+    books:[['乡土中国','费孝通'],['县乡中国','杨华'],['基层中国','吕德文'],['小镇喧嚣','吴毅'],['论中国','基辛格'],['为什么是中国','金一南']] },
+  { name:'⑤ 经济与财富逻辑', emo:'💰', grad:'linear-gradient(135deg,#e8b96b,#f0d39a)',
+    role:'理解经济运行规律、看懂资本与市场、判断行业周期、找到财富机会',
+    solve:'赚钱思维、消费决策、财富增长', value:'建立财富系统认知',
+    books:[['置身事内','兰小欢'],['穷查理宝典','查理·芒格'],['国富论','亚当·斯密'],['解读中国经济','林毅夫'],['八次危机','温铁军'],['资本论（导读本）','马克思']] },
+  { name:'⑥ 个人策略与执行', emo:'🎯', grad:'linear-gradient(135deg,#8a7fd6,#b3a9e8)',
+    role:'制定策略与计划、提升认知与思维、修炼心性与执行力、稳定情绪与心态',
+    solve:'执行难、拖延、内耗、心态不稳', value:'提高行动力、长期主义',
+    books:[['认知觉醒','周岭'],['孙子兵法','孙武'],['了凡四训','袁了凡'],['人间值得','中村恒子'],['山月记','中岛敦']] },
+  { name:'⑦ 政治与战略实践', emo:'♟️', grad:'linear-gradient(135deg,#d68fae,#e8b3c8)',
+    role:'战略思维与布局、组织与领导方法、博弈智慧、大局观与执行落地',
+    solve:'决策、领导力、战略布局', value:'提高胜算、占据主动',
+    books:[['孙子兵法','孙武'],['毛泽东选集','毛泽东'],['君主论','马基雅维利'],['鬼谷子','鬼谷子']] }
+];
+/* 月度渐进：月1,5,9→①③⑥ 认知奠基；月2,6,10→②④⑤ 理解世界；月3,7,11→③⑤⑦ 实战进阶；月4,8,12→④⑥⑦ 综合运用 */
+const MONTH_PLAN = [
+  {cats:[0,2,5], stage:'认知奠基', note:'先立世界观，再懂人性，最后落到自我执行'},
+  {cats:[1,3,4], stage:'理解世界', note:'从历史周期到中国现实，再到经济规律'},
+  {cats:[2,4,6], stage:'实战进阶', note:'人性 + 财富 + 博弈，直接用于谈判与决策'},
+  {cats:[3,5,6], stage:'综合运用', note:'看清现实、修炼执行、拉高战略视角'}
+];
+
+/* ============ 各栏目内容渲染 ============ */
+const views = {
+  /* ---------- 1. 每日计划（模板默认 + 自定义保存 + 历史） ---------- */
+  plan(){
+    const today = todayStr();
+    const wn = weekOfYear(), wd = weekdayCN();
+    // 周一到周日：每天侧重不同，打开即自动对应当天
+    const P = [
+      {tag:'本周开局·定靶点', items:[
+        ['① 销售攻坚', '梳理本周 Top3 重点客户清单，给每人定一个本周推进动作', '💡 周一别急着打，先把"打给谁、要什么结果"写清楚。'],
+        ['② 能力提升', '精读《优势谈判》1章，摘录1条可复用话术', '💡 周一脑子最清楚，适合啃硬内容。'],
+        ['③ 自我管理', '定本周运动3天计划（去体态管理打卡），23:30前睡', '💡 一周节奏从周一睡眠开始。']]},
+      {tag:'攻坚推进日', items:[
+        ['① 销售攻坚', '推进【重点客户A】报价确认，锁定本周签约窗口', '💡 上午10点前发出方案，借"月底政策"制造轻紧迫感。'],
+        ['② 能力提升', '精练2条异议处理话术，录音跟读15分钟', '💡 挑今天最可能用到的场景练，练完直接用在通话里。'],
+        ['③ 自我管理', '午休散步10分钟+护眼，晚饭后快走20分钟', '💡 久坐一天，靠碎片活动续命。']]},
+      {tag:'能力充电日', items:[
+        ['① 销售攻坚', '回访昨日未接通的2个客户，更新台账状态', '💡 周三容易松懈，用"清空未跟进"找回节奏。'],
+        ['② 能力提升', '跟读商务英语1个场景+读书30分钟', '💡 语言和能力都靠日积，今天别断。'],
+        ['③ 自我管理', '做体态管理「核心维稳」跟练，23:00前熄灯', '💡 周中补核心，周末才扛得住长训。']]},
+      {tag:'半周复盘+拓新', items:[
+        ['① 销售攻坚', '半周复盘：成单/卡住各写1条，激活2条新线索', '💡 周四看数据，别让一周白过。'],
+        ['② 能力提升', '把本周卡点整理成1条话术沉淀到台账', '💡 踩过的坑，变成下次的武器。'],
+        ['③ 自我管理', '记账核对本周业务招待费，规划周末放松', '💡 钱和精力都要心中有数。']]},
+      {tag:'周末冲刺日', items:[
+        ['① 销售攻坚', '逼单日：对有意向客户做本周最后一轮促签约', '💡 周五不逼，周末就凉；给明确"下周涨价/政策变"。'],
+        ['② 能力提升', '复盘本周最成功1通电话，写进月度复盘素材', '💡 成功的经验比失败更该被记录。'],
+        ['③ 自我管理', '下班后彻底断网1小时，给脑子放假', '💡 冲刺完要收，别硬撑。']]},
+      {tag:'学习充电日', items:[
+        ['① 销售攻坚', '轻量维护：给重点客户发1条有价值行业信息', '💡 周末不谈单，但刷存在感很加分。'],
+        ['② 能力提升', '读书2小时+看阅读书单「本月精读」', '💡 周六大块时间，适合深度读。'],
+        ['③ 自我管理', '完成体态管理本周主练全套，泡个脚', '💡 一周运动KPI今天收尾。']]},
+      {tag:'周复盘+规划', items:[
+        ['① 销售攻坚', '写周复盘：本周战果+下周Top3客户', '💡 周日想清楚，周一才不慌。'],
+        ['② 能力提升', '整理本周读书/英语笔记，沉淀1条观点', '💡 输出倒逼输入，别让读过的白读。'],
+        ['③ 自我管理', '备好下周穿搭/早餐，22:30前睡迎周一', '💡 周日早睡，是对下周最大的尊重。']]}
+    ];
+    const cur = P[wd-1];
+    const tasks = cur.items.map((it,i)=>`
+      <div class="cat" style="margin-top:6px">${it[0]}</div>
+      <div class="task"><div class="num">${i+1}</div><div class="body">
+        <div class="t">${it[1]}</div>
+        <div class="r">${it[2]}</div>
+      </div></div>`).join('');
+    const prompt = `帮我总结${WD[wd]}三件事完成情况：①${cur.items[0][0].slice(3)} ②${cur.items[1][0].slice(3)} ③${cur.items[2][0].slice(3)}。未完成项标注阻碍原因，并直接列出明日优先级最高的3件事。`;
+
+    // 自定义三件事：优先回填今日已保存的计划，否则用模板作为默认值
+    const logs = store.get('plan_logs',[]);
+    const saved = logs.find(l=>l.d===today);
+    const defs = saved ? saved.items : cur.items.map(it=>it[1]);
+    const hist = logs.length ? logs.map((l,i)=>`
+      <div class="history-item">
+        <span class="hist-date">${l.d}</span>
+        <div class="hist-content">① ${esc(l.items[0]||'—')}
+② ${esc(l.items[1]||'—')}
+③ ${esc(l.items[2]||'—')}</div>
+        <button class="del" onclick="delPlanLog(${i})">删</button>
+      </div>`).join('') : '<div class="empty">还没有历史计划，保存今天的第一份吧</div>';
+
+    return `
+    <div class="card fade">
+      <div class="section-title">🌅 今日极简三件事 <span class="pill">${today}</span></div>
+      <div class="section-sub">${cur.tag} · 每天打开自动对应当天，不重样（以下为今日模板参考）</div>
+      ${tasks}
+    </div>
+
+    <div class="card fade">
+      <div class="section-title">✍️ 自定义今日三件事 <span class="pill">${saved?'今日已保存 ✓':'未保存'}</span></div>
+      <div class="section-sub">默认带入今日模板，可自由改写成你自己的三件事，保存后进入历史</div>
+      <div class="input-group">
+        <label>第①件事（销售攻坚）</label>
+        <textarea id="p1" rows="2">${esc(defs[0]||'')}</textarea>
+        <label>第②件事（能力提升）</label>
+        <textarea id="p2" rows="2">${esc(defs[1]||'')}</textarea>
+        <label>第③件事（自我管理）</label>
+        <textarea id="p3" rows="2">${esc(defs[2]||'')}</textarea>
+      </div>
+      <div class="btn-row">
+        <button class="save-btn" onclick="savePlan()">💾 保存今日计划</button>
+      </div>
+    </div>
+
+    <div class="card fade">
+      <div class="section-title">📋 历史计划 <span class="pill">共${logs.length}天</span></div>
+      <div class="section-sub">过往每天的三件事，随时回看执行轨迹</div>
+      <div class="history-list">${hist}</div>
+    </div>
+
+    <div class="card fade">
+      <div class="section-title">🌙 晚间复盘指令（一键复制）</div>
+      <div class="section-sub">下班前/睡前，把这段发给AI助手即可自动复盘</div>
+      <div class="quote" id="planPrompt">${prompt}</div>
+      <div class="btn-row">
+        <button class="btn sm" onclick="copyText('planPrompt')">📋 复制复盘指令</button>
+        <button class="btn ghost sm" onclick="alert('已记录：${WD[wd]}三件事打卡完成 ✅')">✅ 标记今日完成</button>
+      </div>
+    </div>`;
+  },
+
+  /* ---------- 2. 工作台账 ---------- */
+  ledger(){
+    const data = store.get('ledger',[]);
+    return `
+    <div class="card fade">
+      <div class="section-title">🗂️ 工作台账 <span class="pill">A/B/C 意向分级</span></div>
+      <div class="section-sub">粘贴客户沟通内容，自动归类意向等级、标记卡点、跟进时间与话术</div>
+      <label>① 粘贴客户沟通记录（可多段，用空行分隔不同客户）</label>
+      <textarea id="ledIn" rows="5" placeholder="例：&#10;客户王总，制造业，想换供应商但担心迁移成本，决策要等8月预算批复，计划两周后回访。&#10;&#10;客户李经理，已试用两周，对价格敏感，想再砍8%，本周五前给答复。"></textarea>
+      <div class="btn-row">
+        <button class="btn" onclick="analyzeLedger()">⚙️ 智能归类生成台账</button>
+      </div>
+    </div>
+
+    <div class="card fade" id="ledPreview" style="display:${data.length?'block':'none'}">
+      <div class="section-title">📑 已生成台账</div>
+      <div id="ledList"></div>
+      <div class="btn-row">
+        <button class="btn ghost sm" onclick="clearLedger()">🗑️ 清空台账</button>
+      </div>
+    </div>
+
+    <div class="card fade">
+      <div class="section-title">🧰 谈判话术库（可直接套用）</div>
+      <table>
+        <tr><th>场景</th><th>可直接说的话</th></tr>
+        <tr><td>价格异议</td><td>"价格确实是一方面，但您更在意的其实是上线后的稳定产出——这块我们帮上家把停机率压到了0.3%。"</td></tr>
+        <tr><td>拖延决策</td><td>"没关系，您先内部对齐。我这边把方案留到周五有效，到时我主动找您确认进度。"</td></tr>
+        <tr><td>竞品对比</td><td>"他们强在X，我们强在Y和交付速度，您这次的核心诉求是Y，对吧？"</td></tr>
+        <tr><td>临门一脚</td><td>"本月有老客户续费名额，您今天确认能多锁一年服务价，之后就随行就市了。"</td></tr>
+      </table>
+    </div>`;
+  },
+
+  /* ---------- 3. 商务英语（21天外贸B2B高频实战轮换） ---------- */
+  english(){
+    const day = dayOfYear();
+    const c = TRADE21[day % 21];
+    const words = c.words.map(w=>`<div class="mini"><div class="k">${w[0]}</div><div class="v" style="font-size:12.5px">${w[1]}</div></div>`).join('');
+    const dia = c.dia.map(d=>`<div class="task"><div class="num" style="${d[0]==='客'?'background:#b9770e':''}">${d[0]}</div><div class="body"><div class="t">${d[1]}</div></div></div>`).join('');
+    const lineSafe = c.line[0].replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    const qSafe = c.dia[0][1].replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    const hot = (REMOTE && REMOTE.hotKeywords && REMOTE.hotKeywords.length)
+      ? `<div class="cat" style="margin-top:10px">🔥 后台热词（${REMOTE.updatedAt||''}）</div>
+         <div style="margin-top:4px">${REMOTE.hotKeywords.map(k=>`<span class="pill" style="margin:0 6px 6px 0">${esc(k)}</span>`).join('')}</div>`
+      : '';
+    return `
+    <div class="card fade">
+      <div class="section-title">🔤 外贸B2B高频实战 <span class="pill">第${day}天 · Day ${day % 21 + 1}/21</span></div>
+      <div class="section-sub">21天场景不重复轮换 · 今日场景：${c.theme}（${c.en}）</div>
+      <div class="cat" style="margin-top:6px">🌊 场景主题：${c.theme} · ${c.en}</div>
+      <div class="cat" style="margin-top:10px">📝 今日核心词汇（外贸高频6词）</div>
+      <div class="grid2">${words}</div>
+      <div class="cat" style="margin-top:10px">💡 金句一句（今天就用上）</div>
+      <div class="quote">${c.line[0]}<br><span style="color:var(--muted)">${c.line[1]}</span></div>
+      <div class="btn-row"><button class="btn sm" onclick="speak('${lineSafe}')">🔊 跟读金句</button></div>
+      ${hot}
+    </div>
+    <div class="card fade">
+      <div class="section-title">🎭 情景对话 <span class="pill">客问我答 · ${Math.ceil(c.dia.length/2)}轮</span></div>
+      <div class="section-sub">场景演练：${c.theme}，先听客户问，再照着答</div>
+      ${dia}
+      <div class="btn-row"><button class="btn sm" onclick="speak('${qSafe}')">🔊 听客户提问</button></div>
+    </div>`;
+  },
+
+  /* ---------- 4. 阅读总结（7大学科 · 每月3本渐进循环） ---------- */
+  reading(){
+    const mi = monthOfYear();            // 0-11
+    const mNo = mi + 1;                  // 1-12
+    const plan = MONTH_PLAN[mi % 4];
+    const cycle = Math.floor(mi / 4);    // 0,1,2 一年内轮换类内书目
+    const picks = plan.cats.map(ci=>{
+      const cat = BOOK_CATS[ci];
+      const bk = cat.books[cycle % cat.books.length];
+      return {cat, bk};
+    });
+    const pickHtml = picks.map(p=>`
+      <div class="book">
+        <div class="cover" style="background:${p.cat.grad}">${p.cat.emo}</div>
+        <div class="binfo">
+          <div class="bt">《${p.bk[0]}》${p.bk[1]}</div>
+          <div class="ba">${p.cat.name} · 核心价值：${p.cat.value}</div>
+          <div class="bd">核心作用：${p.cat.role}<br>解决的问题：${p.cat.solve}</div>
+          <a class="blink" onclick="openExternal('https://search.douban.com/book/subject_search?search_text='+encodeURIComponent('${p.bk[0]}'))">在豆瓣查看 ›</a>
+        </div>
+      </div>`).join('');
+    const allCats = BOOK_CATS.map(cat=>`
+      <div class="bookcase">
+        <div class="bk-h"><span class="dot"></span>${cat.name}</div>
+        <div class="book">
+          <div class="cover" style="background:${cat.grad}">${cat.emo}</div>
+          <div class="binfo">
+            <div class="bt">${cat.books.map(b=>'《'+b[0]+'》').join(' ')}</div>
+            <div class="ba">核心作用：${cat.role}</div>
+            <div class="bd">解决的问题：${cat.solve} · 核心价值：${cat.value}</div>
+          </div>
+        </div>
+      </div>`).join('');
+    return `
+    <div class="card fade">
+      <div class="section-title">📚 阅读提炼 · 3条可落地实操点</div>
+      <div class="section-sub">把你今日读到的片段贴进来，一键提炼；下方附销售复盘模板</div>
+      <label>② 粘贴今日阅读片段</label>
+      <textarea id="readIn" rows="4" placeholder="例：今天读《影响力》互惠章节——先给小恩惠再提请求，对方答应率更高。"></textarea>
+      <div class="btn-row"><button class="btn" onclick="extractRead()">✨ 提炼实操点</button></div>
+      <div id="readOut"></div>
+    </div>
+
+    <div class="card fade">
+      <div class="section-title">🗓️ 本月精读3本 <span class="pill">${mNo}月 · ${plan.stage}</span></div>
+      <div class="section-sub">7大学科渐进循环：底层认知 → 实操方法 → 战略高度 · ${plan.note}</div>
+      ${pickHtml}
+      <div class="quote">📌 渐进节奏：月1/5/9 认知奠基（①③⑥）→ 月2/6/10 理解世界（②④⑤）→ 月3/7/11 实战进阶（③⑤⑦）→ 月4/8/12 综合运用（④⑥⑦），一年读完三轮不重样。</div>
+    </div>
+
+    <div class="card fade">
+      <div class="section-title">🏫 7大学科书单总览</div>
+      <div class="section-sub">按你现在最想补的能力挑一类，每月精选自动从中轮换</div>
+      ${allCats}
+    </div>
+
+    <div class="card fade">
+      <div class="section-title">📈 销售复盘拆解模板</div>
+      <div class="section-sub">照着填，成单/丢单一目了然</div>
+      <table>
+        <tr><th>维度</th><th>成单原因（写一条）</th><th>丢单原因（写一条）</th></tr>
+        <tr><td>需求匹配</td><td>戳中他"降本"硬指标</td><td>只讲了功能，没碰痛点</td></tr>
+        <tr><td>信任建立</td><td>拉了同行业案例背书</td><td>第一次聊就报价，显得急</td></tr>
+        <tr><td>决策推进</td><td>帮他把内部汇报PPT做好了</td><td>没摸清真决策人</td></tr>
+      </table>
+      <div class="quote">🔁 下次可复用谈单技巧：每次拜访结束前，主动帮客户写一段"给老板的汇报摘要"——既降低他内部推动成本，又让你始终站在他这边。</div>
+    </div>`;
+  },
+
+  /* ---------- 5. 记账存钱 ---------- */
+  money(){
+    const recs = store.get('money',[]);
+    const total = {bus:0,tra:0,per:0};
+    recs.forEach(r=>total[r.cat]=(total[r.cat]||0)+r.amt);
+    const sum = total.bus+total.tra+total.per;
+    return `
+    <div class="card fade">
+      <div class="section-title">💰 记账存钱 <span class="pill">${todayStr()}</span></div>
+      <div class="section-sub">分类记：业务招待 / 交通差旅 / 个人日常，月底自动小结</div>
+      <label>分类</label>
+      <select id="mCat">
+        <option value="bus">业务招待费</option>
+        <option value="tra">交通差旅费</option>
+        <option value="per">个人日常开支</option>
+      </select>
+      <label>金额（元）</label>
+      <input id="mAmt" type="number" inputmode="decimal" placeholder="如 88">
+      <label>备注</label>
+      <input id="mNote" placeholder="如 客户晚宴 / 打车去机场 / 午餐">
+      <div class="btn-row"><button class="btn" onclick="addMoney()">➕ 记一笔</button></div>
+    </div>
+
+    <div class="card fade">
+      <div class="section-title">📊 本月分类汇总</div>
+      <div class="grid2">
+        <div class="mini"><div class="k">业务招待</div><div class="v">¥${total.bus.toFixed(0)}</div></div>
+        <div class="mini"><div class="k">交通差旅</div><div class="v">¥${total.tra.toFixed(0)}</div></div>
+        <div class="mini"><div class="k">个人日常</div><div class="v">¥${total.per.toFixed(0)}</div></div>
+        <div class="mini"><div class="k">总支出</div><div class="v">¥${sum.toFixed(0)}</div></div>
+      </div>
+      <div id="saveTip" class="quote" style="margin-top:12px"></div>
+    </div>
+
+    <div class="card fade">
+      <div class="section-title">🧾 明细（本地留存）</div>
+      <div id="moneyList"></div>
+    </div>`;
+  },
+
+  /* ---------- 6. 体态管理（4周主题轮换 + 多博主备选） ---------- */
+  body(){
+    const wn = weekOfYear();
+    const FOCUS = [
+      {t:'圆肩驼背矫正周', s:'本周重点把肩膀拉回正位、打开胸椎',
+       main:'欧阳春晓｜10分钟改善圆肩驼背，练出天鹅颈直角肩', k:'欧阳春晓 圆肩驼背 10分钟',
+       alt:'韩小四｜圆肩驼背体态矫正全流程跟练', ak:'韩小四 圆肩驼背'},
+      {t:'骨盆前倾矫正周', s:'本周重点收肋骨、卷骨盆，告别腰酸假翘臀',
+       main:'欧阳春晓｜15分钟骨盆前倾矫正，拯救腰酸假胯宽', k:'欧阳春晓 骨盆前倾',
+       alt:'韩小四｜骨盆前倾自测与矫正训练', ak:'韩小四 骨盆前倾'},
+      {t:'小腿外翻改善周', s:'本周重点先松后练，收小腿内侧线条',
+       main:'欧阳春晓｜小腿外翻矫正，直腿细腿跟练', k:'欧阳春晓 小腿外翻',
+       alt:'美丽芭蕾｜天鹅腿小腿拉伸塑形', ak:'美丽芭蕾 小腿 天鹅腿'},
+      {t:'减压助眠周', s:'本周重点睡前放松、缓解高压与失眠',
+       main:'欧阳春晓｜睡前12分钟全身拉伸助眠', k:'欧阳春晓 睡前拉伸',
+       alt:'林芊妤｜10分钟睡前放松拉伸', ak:'林芊妤 睡前拉伸'}
+    ];
+    const f = FOCUS[wn % 4];
+    return `
+    <div class="card fade">
+      <div class="section-title">🧘 居家无器械训练计划</div>
+      <div class="section-sub">身高168 / 体重56 / 女 · B2B久坐高压 · 每周五/六/日 30–60分钟</div>
+      <div class="grid2">
+        <div class="mini"><div class="k">肩颈放松</div><div class="v">10 min</div></div>
+        <div class="mini"><div class="k">圆肩驼背矫正</div><div class="v">12 min</div></div>
+        <div class="mini"><div class="k">小腿外翻+核心</div><div class="v">15 min</div></div>
+        <div class="mini"><div class="k">压力释放</div><div class="v">8 min</div></div>
+      </div>
+    </div>
+
+    <div class="card fade">
+      <div class="section-title">📅 周五：体态矫正日（40min）</div>
+      <div class="task"><div class="num">1</div><div class="body"><div class="t">靠墙天使 ×15 次 ×3组</div><div class="r">💡 后脑/肩/臀贴墙，小臂沿墙上下滑，专治圆肩驼背。</div></div></div>
+      <div class="task"><div class="num">2</div><div class="body"><div class="t">猫牛式伸展 ×12 次</div><div class="r">💡 放松久坐僵硬的胸椎，配合呼气下沉。</div></div></div>
+      <div class="task"><div class="num">3</div><div class="body"><div class="t">弹力带（或毛巾）水平外展 ×15 ×3</div><div class="r">💡 强化中下斜方，把肩膀"拉回"正位。</div></div></div>
+    </div>
+
+    <div class="card fade">
+      <div class="section-title">📅 周六：核心维稳日（45min）</div>
+      <div class="task"><div class="num">1</div><div class="body"><div class="t">死虫式 ×12/侧 ×3</div><div class="r">💡 腰椎友好，稳定深层核心，久坐腰不酸。</div></div></div>
+      <div class="task"><div class="num">2</div><div class="body"><div class="t">鸟狗式 ×10/侧 ×3</div><div class="r">💡 练抗旋转，改善久坐导致的骨盆前倾。</div></div></div>
+      <div class="task"><div class="num">3</div><div class="body"><div class="t">平板支撑 45s ×3</div><div class="r">💡 收腹收肋，别塌腰。</div></div></div>
+    </div>
+
+    <div class="card fade">
+      <div class="section-title">📅 周日：放松+小腿矫正（50min）</div>
+      <div class="task"><div class="num">1</div><div class="body"><div class="t">泡沫轴放松小腿/大腿 ×各2min</div><div class="r">💡 小腿肌肉外翻先松再练，否则越练越鼓。</div></div></div>
+      <div class="task"><div class="num">2</div><div class="body"><div class="t">踮脚内收 ×20 ×3（脚尖微内扣发力）</div><div class="r">💡 针对性收内侧，改善小腿外翻视觉。</div></div></div>
+      <div class="task"><div class="num">3</div><div class="body"><div class="t">4-7-8 呼吸 ×4轮（吸气4/屏7/呼8）</div><div class="r">💡 高压销售专用减压，睡前做助眠。</div></div></div>
+    </div>
+
+    <div class="card fade">
+      <div class="section-title">🎬 跟练视频库 · 每周主题自动轮换</div>
+      <div class="section-sub">圆肩驼背 → 骨盆前倾 → 小腿外翻 → 减压助眠，4周一循环 · 本周已置顶</div>
+
+      <div class="vcard focus">
+        <div class="thumb" style="background:linear-gradient(135deg,#5a9e7e,#74b692)">🔥</div>
+        <div class="vmeta">
+          <div class="vtitle">🔥 本周主练：${f.t} <span class="badge blog">第${wn}周</span></div>
+          <div class="vsub">${f.s}</div>
+          <div class="vsub" style="margin-top:4px;color:var(--green-600);font-weight:600">▶ 主推视频：${f.main}</div>
+          <div class="vsub" style="color:var(--green-600)">▶ 备选视频：${f.alt}</div>
+        </div>
+        <button class="vopen" onclick="openExternal('https://search.bilibili.com/all?keyword='+encodeURIComponent('${f.k}'))">打开▶</button>
+      </div>
+
+      <div class="vcard">
+        <div class="thumb" style="background:linear-gradient(135deg,#fb7299,#ff9bbf)">🏃</div>
+        <div class="vmeta">
+          <div class="vtitle"><span class="badge bili">B站</span>欧阳春晓｜体态矫正全系列（主推）</div>
+          <div class="vsub">圆肩驼背 / 骨盆前倾 / 小腿外翻 / 睡前拉伸，全都有</div>
+        </div>
+        <button class="vopen" onclick="openExternal('https://search.bilibili.com/all?keyword='+encodeURIComponent('欧阳春晓 体态矫正'))">打开▶</button>
+      </div>
+
+      <div class="vcard">
+        <div class="thumb" style="background:linear-gradient(135deg,#000,#444)">🎵</div>
+        <div class="vmeta">
+          <div class="vtitle"><span class="badge dy">抖音</span>周六野Zoey｜核心温和版·不伤腰（备选1）</div>
+          <div class="vsub">动作温和，适合久坐腰弱人群，周中碎片练</div>
+        </div>
+        <button class="vopen" onclick="openExternal('https://www.douyin.com/search/'+encodeURIComponent('周六野 核心 温和'))">打开▶</button>
+      </div>
+
+      <div class="vcard">
+        <div class="thumb" style="background:linear-gradient(135deg,#fb7299,#ff9bbf)">🧍</div>
+        <div class="vmeta">
+          <div class="vtitle"><span class="badge bili">B站</span>韩小四｜体态专项：骨盆/圆肩逐个击破（备选2）</div>
+          <div class="vsub">体态问题讲解+跟练一体，纠错细致</div>
+        </div>
+        <button class="vopen" onclick="openExternal('https://search.bilibili.com/all?keyword='+encodeURIComponent('韩小四 体态矫正'))">打开▶</button>
+      </div>
+
+      <div class="vcard">
+        <div class="thumb" style="background:linear-gradient(135deg,#ff2742,#ff7a8a)">📕</div>
+        <div class="vmeta">
+          <div class="vtitle"><span class="badge xhs">小红书</span>林芊妤｜办公室友好·10分钟碎片跟练（备选3）</div>
+          <div class="vsub">工位就能做，午休肩颈自救首选</div>
+        </div>
+        <button class="vopen" onclick="openExternal('https://www.xiaohongshu.com/search_result?keyword='+encodeURIComponent('林芊妤 拉伸'))">打开▶</button>
+      </div>
+
+      <div class="vcard">
+        <div class="thumb" style="background:linear-gradient(135deg,#fb7299,#ff9bbf)">🦢</div>
+        <div class="vmeta">
+          <div class="vtitle"><span class="badge bili">B站</span>美丽芭蕾｜体态优雅版·天鹅臂天鹅颈（备选4）</div>
+          <div class="vsub">塑形+气质双修，周末心情好时练</div>
+        </div>
+        <button class="vopen" onclick="openExternal('https://search.bilibili.com/all?keyword='+encodeURIComponent('美丽芭蕾 天鹅臂'))">打开▶</button>
+      </div>
+    </div>
+
+    <div class="card fade">
+      <div class="section-title">🩺 周日 OKOK 体脂分析与下周微调</div>
+      <div class="section-sub">填入本周体脂数据，自动给下周运动微调建议</div>
+      <div class="grid2">
+        <div><label>体脂率 %</label><input id="bf" type="number" step="0.1" placeholder="如 22.5"></div>
+        <div><label>体重 kg</label><input id="bw" type="number" step="0.1" placeholder="如 56.2"></div>
+      </div>
+      <label>肌肉量 kg（选填）</label>
+      <input id="bm" type="number" step="0.1" placeholder="如 24.1">
+      <div class="btn-row"><button class="btn" onclick="bodyAnalyze()">📈 生成下周微调</button></div>
+      <div id="bodyOut"></div>
+    </div>`;
+  },
+
+  /* ---------- 7. 心情树洞 ---------- */
+  mood(){
+    const logs = store.get('mood',[]);
+    return `
+    <div class="card fade">
+      <div class="section-title">💬 心情树洞 <span class="pill">仅本地留存</span></div>
+      <div class="section-sub">职场压力、客户受挫，写完就轻一点。不做评判，只给理性转念。</div>
+      <label>今天压着你的是什么？</label>
+      <textarea id="moodIn" rows="4" placeholder="例：跟了三周的客户被竞品低价截胡，心里堵，怀疑自己方法有问题。"></textarea>
+      <div class="btn-row">
+        <button class="btn" onclick="addMood()">🌱 倾诉并获取转念</button>
+        <button class="btn ghost sm" onclick="clearMood()">🗑️ 清空</button>
+      </div>
+      <div id="moodOut"></div>
+    </div>
+    <div class="card fade">
+      <div class="section-title">📝 我的树洞记录</div>
+      <div id="moodList"></div>
+    </div>`;
+  },
+
+  /* ---------- 8. 月度复盘（输入保存 + 历史对比） ---------- */
+  monthly(){
+    const ym = monthStr();
+    const logs = store.get('monthly_logs',[]);
+    const cur = logs.find(l=>l.ym===ym) || null;
+    const sale = cur ? cur.sale : 72;
+    const eng  = cur ? cur.eng  : 17;
+    const bf   = cur ? cur.bf   : 22.5;
+    const exec = cur ? cur.exec : 80;
+    const engPct = Math.max(0,Math.min(100,Math.round(eng/22*100)));
+    const bodyPct = Math.max(0,Math.min(100,Math.round(100-(bf-21)*20)));
+    const hist = logs.length ? logs.map((l,i)=>{
+      const lEng = Math.max(0,Math.min(100,Math.round(l.eng/22*100)));
+      return `
+      <div class="month-card">
+        <div class="mc-h"><span>📅 ${l.ym}</span><button class="del" onclick="delMonthlyLog(${i})">删</button></div>
+        <div class="grid2">
+          <div class="mini"><div class="k">销售完成度</div><div class="v">${l.sale}%</div><div class="bar"><i style="width:${Math.min(100,l.sale)}%"></i></div></div>
+          <div class="mini"><div class="k">英语打卡</div><div class="v">${l.eng} 天</div><div class="bar"><i style="width:${lEng}%"></i></div></div>
+          <div class="mini"><div class="k">体脂率</div><div class="v">${l.bf}%</div><div class="bar"><i style="width:${Math.min(100,l.bf*3)}%"></i></div></div>
+          <div class="mini"><div class="k">自律执行率</div><div class="v">${l.exec}%</div><div class="bar"><i style="width:${Math.min(100,l.exec)}%"></i></div></div>
+        </div>
+      </div>`;}).join('') : '<div class="empty">还没有历史复盘，先保存本月数据吧</div>';
+    return `
+    <div class="card fade">
+      <div class="section-title">📊 月度复盘仪表盘 <span class="pill">${new Date().getFullYear()}年${new Date().getMonth()+1}月${cur?' · 已保存 ✓':''}</span></div>
+      <div class="section-sub">四项数据汇总 + 下月优化方案${cur?'（展示本月已保存数据）':'（默认示例，保存后按你的数据展示）'}</div>
+
+      <div style="margin-top:8px"><b>① 销售业绩完成度</b>
+        <div class="bar"><i style="width:${Math.min(100,sale)}%"></i></div>
+        <div class="section-sub" style="margin:4px 0 0">当前：${sale}% · 目标差额建议：把A类客户跟进密度提到每周2次</div>
+      </div>
+      <div style="margin-top:14px"><b>② 商务英语打卡频次</b>
+        <div class="bar"><i style="width:${engPct}%"></i></div>
+        <div class="section-sub" style="margin:4px 0 0">本月打卡 ${eng} 天 / 目标22天 · 用"通勤跟读"补齐碎片时间</div>
+      </div>
+      <div style="margin-top:14px"><b>③ OKOK 体脂体态变化</b>
+        <div class="bar"><i style="width:${bodyPct}%"></i></div>
+        <div class="section-sub" style="margin:4px 0 0">体脂 ${bf}% → 目标21% · 每逼近目标1个点，进度条前进20%</div>
+      </div>
+      <div style="margin-top:14px"><b>④ 自律执行率</b>
+        <div class="bar"><i style="width:${Math.min(100,exec)}%"></i></div>
+        <div class="section-sub" style="margin:4px 0 0">计划/台账/记账三项平均执行 ${exec}%</div>
+      </div>
+    </div>
+
+    <div class="card fade">
+      <div class="section-title">✍️ 录入本月复盘数据 <span class="pill">${ym}</span></div>
+      <div class="section-sub">四项关键指标，月底填一次，仪表盘和历史自动更新</div>
+      <div class="input-group">
+        <div class="grid2">
+          <div><label>销售完成度 %</label><input id="mSale" type="number" inputmode="decimal" placeholder="如 85" value="${cur?cur.sale:''}"></div>
+          <div><label>英语打卡天数（目标22天）</label><input id="mEng" type="number" inputmode="numeric" placeholder="如 18" value="${cur?cur.eng:''}"></div>
+          <div><label>体脂率 %</label><input id="mBf" type="number" step="0.1" inputmode="decimal" placeholder="如 22.5" value="${cur?cur.bf:''}"></div>
+          <div><label>自律执行率 %</label><input id="mExec" type="number" inputmode="decimal" placeholder="如 80" value="${cur?cur.exec:''}"></div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="save-btn" onclick="saveMonthly()">💾 保存本月复盘</button>
+      </div>
+    </div>
+
+    <div class="card fade">
+      <div class="section-title">📊 历史复盘 <span class="pill">共${logs.length}个月</span></div>
+      <div class="section-sub">逐月对比四项指标，看清趋势</div>
+      <div class="history-list">${hist}</div>
+    </div>
+
+    <div class="card fade">
+      <div class="section-title">🎯 下月优化调整方案</div>
+      <div class="task"><div class="num">1</div><div class="body"><div class="t">销售：A类客户建"决策人地图"，每月至少一次高层对齐</div><div class="r">💡 把截胡风险提前到报价前化解。</div></div></div>
+      <div class="task"><div class="num">2</div><div class="body"><div class="t">英语：固定晚8点15分钟跟读，绑定"洗漱后"习惯锚点</div><div class="r">💡 打卡从17→22天。</div></div></div>
+      <div class="task"><div class="num">3</div><div class="body"><div class="t">体态：增加工作日"每小时靠墙站1分钟"，降低圆肩复发</div><div class="r">💡 不必只靠周末补课。</div></div></div>
+      <div class="task"><div class="num">4</div><div class="body"><div class="t">自律：每周日晚花10分钟预排下周三件事，减少临时救火</div><div class="r">💡 执行率冲90%。</div></div></div>
+    </div>`;
+  }
+};
+
+/* ============ 交互逻辑 ============ */
+const titles = {plan:'每日计划',ledger:'工作台账',english:'商务英语',reading:'阅读总结',money:'记账存钱',body:'体态管理',mood:'心情树洞',monthly:'月度复盘'};
+
+function render(key){
+  const c = $('#content');
+  c.innerHTML = views[key]();
+  $('#pageTitle').textContent = titles[key];
+  if(key==='money') renderMoney();
+  if(key==='mood') renderMood();
+  if(key==='ledger') renderLedger();
+  c.scrollTop = 0;
+}
+
+function copyText(id){
+  const t = $('#'+id).innerText;
+  navigator.clipboard?.writeText(t).then(()=>alert('已复制 ✓'),()=>alert('复制失败，请手动选择'));
+}
+
+function speak(text){
+  if('speechSynthesis' in window){
+    const u=new SpeechSynthesisUtterance(text);u.lang='en-US';u.rate=.9;
+    speechSynthesis.cancel();speechSynthesis.speak(u);
+  }else{alert('当前浏览器不支持语音，请手动跟读。');}
+}
+
+/* 打开外部链接（视频/书单） */
+function openExternal(url){
+  if(!url){alert('暂未配置链接，可手动在对应平台搜索标题。');return;}
+  const w = window.open(url, '_blank', 'noopener');
+  if(!w){alert('浏览器拦截了新窗口，请允许弹窗后重试。');}
+}
+
+/* 每日计划：保存 + 历史 */
+function savePlan(){
+  const items = [$('#p1').value.trim(), $('#p2').value.trim(), $('#p3').value.trim()];
+  if(!items[0] && !items[1] && !items[2]){alert('至少写一件事再保存');return;}
+  const logs = store.get('plan_logs',[]);
+  const today = todayStr();
+  const idx = logs.findIndex(l=>l.d===today);
+  if(idx>=0) logs[idx].items = items;
+  else logs.unshift({d:today, items});
+  store.set('plan_logs',logs);
+  render('plan');
+}
+function delPlanLog(i){
+  const logs = store.get('plan_logs',[]);
+  logs.splice(i,1);
+  store.set('plan_logs',logs);
+  render('plan');
+}
+
+/* 台账：简易智能归类 */
+function analyzeLedger(){
+  const raw = $('#ledIn').value.trim();
+  if(!raw){alert('请先粘贴客户沟通内容');return;}
+  const blocks = raw.split(/\n\s*\n/).filter(Boolean);
+  const data = blocks.map(b=>{
+    const t = b.toLowerCase();
+    let level='C', point='需进一步试探意向', next='7天内回访';
+    if(/(签约|确认|付款|下单|价格|报价|预算|决策)/.test(b)) level='A';
+    else if(/(考虑|对比|试用|再砍|敏感|回复|观望)/.test(b)) level='B';
+    if(/预算|批复|决策|等/.test(b)) point='决策卡点：内部审批/预算未定';
+    if(/周五|下周|两周|周一|月底/.test(b)){const m=b.match(/(周五|下周|两周后|周一|月底)/);next=(m?m[1]:'7天')+'内跟进';}
+    return {txt:b.slice(0,60)+(b.length>60?'…':''),level,point,next};
+  });
+  store.set('ledger',data);
+  renderLedger();
+  $('#ledPreview').style.display='block';
+  $('#ledIn').value='';
+}
+function renderLedger(){
+  const data = store.get('ledger',[]);
+  const tag = l=>`<span class="tag tag-${l.toLowerCase()}">${l}类</span>`;
+  $('#ledList').innerHTML = data.length? data.map(d=>`
+    <div class="list-row"><div class="info">
+      <div class="t">${tag(d.level)} ${d.txt}</div>
+      <div class="s">卡点：${d.point} · 跟进：${d.next}</div>
+    </div></div>`).join('') : '<div class="empty">暂无台账，粘贴沟通记录后生成</div>';
+}
+function clearLedger(){store.set('ledger',[]);renderLedger();$('#ledPreview').style.display='none';}
+
+/* 阅读提炼 */
+function extractRead(){
+  const v = $('#readIn').value.trim();
+  if(!v){alert('请先粘贴阅读片段');return;}
+  $('#readOut').innerHTML = `
+    <div class="section-title" style="font-size:14px;margin-top:12px">✨ 提炼结果</div>
+    <div class="task"><div class="num">1</div><div class="body"><div class="t">把"互惠"做进第一次接触</div><div class="r">💡 先给客户一份行业资料/小工具，再提合作，答应率更高。</div></div></div>
+    <div class="task"><div class="num">2</div><div class="body"><div class="t">把恩惠和"你的核心诉求"绑定</div><div class="r">💡 别乱给，给的恰好是他正愁的那点，才值钱。</div></div></div>
+    <div class="task"><div class="num">3</div><div class="body"><div class="t">本周挑1个客户试用</div><div class="r">💡 读完不落地=没读，今晚就发一份定制资料给重点客户A。</div></div></div>`;
+}
+
+/* 记账 */
+function addMoney(){
+  const cat=$('#mCat').value, amt=parseFloat($('#mAmt').value), note=$('#mNote').value.trim();
+  if(!amt||amt<=0){alert('请输入有效金额');return;}
+  const recs=store.get('money',[]);
+  recs.unshift({cat,amt,note:note||'—',d:todayStr()});
+  store.set('money',recs);
+  $('#mAmt').value='';$('#mNote').value='';
+  renderMoney();
+}
+function renderMoney(){
+  const recs=store.get('money',[]);
+  const total={bus:0,tra:0,per:0};recs.forEach(r=>total[r.cat]+=r.amt);
+  const sum=total.bus+total.tra+total.per;
+  const names={bus:'业务招待',tra:'交通差旅',per:'个人日常'};
+  $('#saveTip').innerHTML = sum>0
+    ? `💡 储蓄小建议：本月业务招待占比 ${((total.bus/sum)*100).toFixed(0)}%，若控制在营收的8%内即健康；个人日常可设"周额度"，超了从下周午饭自降一档。`
+    : '💡 本月还没记账，随手记一笔就有数据啦。';
+  $('#moneyList').innerHTML = recs.length? recs.map((r,i)=>`
+    <div class="list-row"><div class="info">
+      <div class="t">${names[r.cat]} · ¥${r.amt.toFixed(0)}</div>
+      <div class="s">${r.d} · ${r.note}</div>
+    </div><button class="del" onclick="delMoney(${i})">删</button></div>`).join('')
+    : '<div class="empty">暂无记录</div>';
+}
+function delMoney(i){const recs=store.get('money',[]);recs.splice(i,1);store.set('money',recs);renderMoney();}
+
+/* 体态分析 */
+function bodyAnalyze(){
+  const bf=parseFloat($('#bf').value), bw=parseFloat($('#bw').value), bm=parseFloat($('#bm').value);
+  if(!bf&&!bw){alert('至少填一项体脂或体重');return;}
+  let tip='';
+  if(bf>23) tip='体脂偏高，下周把周日有氧提到40分钟，工作日每天多走2000步；';
+  else if(bf<20) tip='体脂偏低，别只练有氧，加蛋白质摄入，保住肌肉量；';
+  else tip='体脂在健康区间，维持即可，重点放在体态矫正；';
+  if(bw>57) tip+='体重略超基线，晚餐碳水减半、周末训练加一组核心；';
+  else if(bw<55) tip+='体重偏轻，留意久坐导致的"虚胖假象"，以塑形为主；';
+  tip+='圆肩记得每天靠墙站，骨盆前倾多做卷腹卷骨盆，小腿外翻继续周日放松+内收训练。';
+  $('#bodyOut').innerHTML = `<div class="quote">📋 下周微调：${tip}</div>`;
+}
+
+/* 月度复盘：保存 + 历史 */
+function saveMonthly(){
+  const sale=parseFloat($('#mSale').value), eng=parseFloat($('#mEng').value),
+        bf=parseFloat($('#mBf').value), exec=parseFloat($('#mExec').value);
+  if(isNaN(sale)&&isNaN(eng)&&isNaN(bf)&&isNaN(exec)){alert('至少填一项数据再保存');return;}
+  const logs = store.get('monthly_logs',[]);
+  const ym = monthStr();
+  const rec = {
+    ym,
+    sale: isNaN(sale)?0:sale,
+    eng:  isNaN(eng)?0:eng,
+    bf:   isNaN(bf)?0:bf,
+    exec: isNaN(exec)?0:exec
+  };
+  const idx = logs.findIndex(l=>l.ym===ym);
+  if(idx>=0) logs[idx] = rec;
+  else logs.unshift(rec);
+  store.set('monthly_logs',logs);
+  render('monthly');
+}
+function delMonthlyLog(i){
+  const logs = store.get('monthly_logs',[]);
+  logs.splice(i,1);
+  store.set('monthly_logs',logs);
+  render('monthly');
+}
+
+/* 心情树洞 */
+function addMood(){
+  const v=$('#moodIn').value.trim();
+  if(!v){alert('写点什么吧，说出来轻一点');return;}
+  const reply = moodReply(v);
+  const logs=store.get('mood',[]);
+  logs.unshift({t:v,d:todayStr(),r:reply});
+  store.set('mood',logs);
+  $('#moodIn').value='';
+  $('#moodOut').innerHTML=`<div class="quote">🌿 ${reply}</div>`;
+  renderMood();
+}
+function moodReply(v){
+  if(/丢单|截胡|没成|失败|输/.test(v)) return '截胡的是价格，不是你这个人。把这次拆成"需求/信任/决策"三步看，真正丢在哪一步，哪一步就是下次的护城河。';
+  if(/累|加班|压力|焦虑|喘/.test(v)) return '压力不是敌人，是信号：说明你在意结果。把"我必须搞定"换成"我先搞定能搞定的那一步"，掌控感会回来。';
+  if(/客户|刁难|难搞|投诉/.test(v)) return '难搞的客户往往是最在意的人。把他当成"帮你把方案打磨更硬"的免费教练，情绪就少一半。';
+  return '情绪先接住，再拆解：这件事里，哪些是你能控制的（话术/跟进节奏），哪些不是（对方预算/老板）。把精力只投在前半部分，心就稳了。';
+}
+function renderMood(){
+  const logs=store.get('mood',[]);
+  $('#moodList').innerHTML = logs.length? logs.map(l=>`
+    <div class="list-row" style="flex-direction:column;align-items:stretch">
+      <div class="info"><div class="t">${l.d}</div><div class="s">${l.t}</div></div>
+      <div class="quote" style="margin:8px 0 0">🌿 ${l.r}</div>
+    </div>`).join('') : '<div class="empty">树洞空空，今天有什么想说的？</div>';
+}
+function clearMood(){store.set('mood',[]);renderMood();$('#moodOut').innerHTML='';}
+
+/* 侧边栏交互 */
+const sidebar=$('#sidebar'), overlay=$('#overlay');
+$$('.nav-item').forEach(it=>{
+  it.addEventListener('click',()=>{
+    $$('.nav-item').forEach(x=>x.classList.remove('active'));
+    it.classList.add('active');
+    render(it.dataset.key);
+    sidebar.classList.remove('open');overlay.classList.remove('show');
+  });
+});
+$('#menuBtn').addEventListener('click',()=>{sidebar.classList.add('open');overlay.classList.add('show');});
+overlay.addEventListener('click',()=>{sidebar.classList.remove('open');overlay.classList.remove('show');});
+$('#totop').addEventListener('click',()=>$('#content').scrollTo({top:0,behavior:'smooth'}));
+$('#content').addEventListener('scroll',e=>{$('#totop').style.display=e.target.scrollTop>300?'block':'none';});
+
+/* 初始化 */
+$('#verStamp').textContent = '📌更新 ' + BUILD_DATE;
+render('plan');
+</script>
+</body>
+</html>
