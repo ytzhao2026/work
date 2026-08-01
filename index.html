@@ -4,10 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5a9e7e">
-<link rel="manifest" href="./manifest.json">
-<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="自律工作台">
 <title>个人自律工作台</title>
 <style>
   :root{
@@ -1302,14 +1299,6 @@ $('#content').addEventListener('scroll',e=>{$('#totop').style.display=e.target.s
 /* 初始化 */
 $('#verStamp').textContent = '📌更新 ' + BUILD_DATE;
 render('plan');
-</script>
-<script>
-/* ============ 离线缓存（Service Worker） ============ */
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js').then(function(r){
-    console.log('[SW] 已注册, scope:', r.scope);
-  }).catch(function(e){ console.warn('[SW] 注册失败:', e); });
-}
 </script>
 </body>
 </html>
