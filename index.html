@@ -345,6 +345,7 @@
     <path d="M21 31 Q24 34 27 31" stroke="#c0392b" stroke-width="1.2" fill="none" stroke-linecap="round"/>
     <rect x="32" y="7" width="12" height="13" rx="1.5" fill="#fff" stroke="#4781a0" stroke-width="1"/><path d="M34 12 l2 2 l4 -4" stroke="#4781a0" stroke-width="1.3" fill="none" stroke-linecap="round"/>
   </svg></span><span class="txt">月度复盘</span></div>
+      <div class="nav-item" data-key="backup"><span class="ico">💾</span><span class="txt">数据备份</span></div>
     </nav>
   </aside>
 
@@ -381,7 +382,7 @@ const BUILD_DATE = '2026-08-01'; /* 工作台代码版本，每次重大更新�
 const esc = s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const store = {
   get(k,def){try{const v=localStorage.getItem('zlt_'+k);return v?JSON.parse(v):def;}catch(e){return def;}},
-  set(k,v){localStorage.setItem('zlt_'+k,JSON.stringify(v));}
+  set(k,v){try{localStorage.setItem('zlt_'+k,JSON.stringify(v));}catch(e){console.warn('[store] 保存失败:',k,e);alert('⚠️ 存储空间已满，请清理浏览器缓存后重试');}}
 };
 
 /* ============ 内置数据（离线兜底，无需网络） ============ */
@@ -1090,11 +1091,40 @@ const views = {
       <div class="task"><div class="num">3</div><div class="body"><div class="t">体态：增加工作日"每小时靠墙站1分钟"，降低圆肩复发</div><div class="r">💡 不必只靠周末补课。</div></div></div>
       <div class="task"><div class="num">4</div><div class="body"><div class="t">自律：每周日晚花10分钟预排下周三件事，减少临时救火</div><div class="r">💡 执行率冲90%。</div></div></div>
     </div>`;
+  },
+  backup:()=>{
+    const keys = ['plan_logs','ledger','money','mood','monthly_logs'];
+    const summary = keys.map(k=>{
+      const v = store.get(k,null);
+      return {key:k, count: Array.isArray(v)?v.length:(v?1:0), size: JSON.stringify(v||{}).length};
+    });
+    const totalSize = summary.reduce((s,i)=>s+i.size,0);
+    return `
+    <div class="card">
+      <div class="section-title">💾 数据备份与恢复</div>
+      <p style="color:#666;font-size:13px;margin-bottom:12px;line-height:1.6">
+        你的所有数据都保存在<strong>手机浏览器本地</strong>。换设备、清缓存或从不同地址打开会导致数据丢失。<br>
+        建议每周导出一次备份文件，存到微信文件传输助手或网盘。
+      </p>
+      <div style="background:#f8faf8;border-radius:10px;padding:12px;margin:12px 0">
+        <div style="font-size:12px;color:#888;margin-bottom:6px">📊 当前存储概况</div>
+        ${summary.map(s=>`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:13px"><span>${{plan_logs:'📋 每日计划',ledger:'📒 工作台账',money:'💰 记账流水',mood:'🌿 心情树洞',monthly_logs:'📈 月度复盘'}[s.key]}</span><span>${s.count} 条 · ${(s.size/1024).toFixed(1)}KB</span></div>`).join('')}
+        <div style="border-top:1px solid #ddd;margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;font-weight:600;font-size:13px"><span>合计</span><span>${(totalSize/1024).toFixed(1)} KB</span></div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button onclick="exportData()" style="flex:1;min-width:120px;padding:14px;border:none;background:#5a9e7e;color:#fff;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer">📥 导出备份</button>
+        <label style="flex:1;min-width:120px;padding:14px;border:2px dashed #5a9e7e;color:#5a9e7e;border-radius:10px;font-size:15px;font-weight:600;text-align:center;cursor:pointer;display:flex;align-items:center;justify-content:center">
+          📤 导入恢复
+          <input type="file" accept=".json" onchange="importData(event)" style="display:none">
+        </label>
+      </div>
+      <div id="backupStatus" style="margin-top:12px;text-align:center;font-size:13px"></div>
+    </div>`;
   }
 };
 
 /* ============ 交互逻辑 ============ */
-const titles = {plan:'每日计划',ledger:'工作台账',english:'商务英语',reading:'阅读总结',money:'记账存钱',body:'体态管理',mood:'心情树洞',monthly:'月度复盘'};
+const titles = {plan:'每日计划',ledger:'工作台账',english:'商务英语',reading:'阅读总结',money:'记账存钱',body:'体态管理',mood:'心情树洞',monthly:'月度复盘',backup:'数据备份'};
 
 function render(key){
   const c = $('#content');
@@ -1168,8 +1198,8 @@ function renderLedger(){
   const tag = l=>`<span class="tag tag-${l.toLowerCase()}">${l}类</span>`;
   $('#ledList').innerHTML = data.length? data.map(d=>`
     <div class="list-row"><div class="info">
-      <div class="t">${tag(d.level)} ${d.txt}</div>
-      <div class="s">卡点：${d.point} · 跟进：${d.next}</div>
+      <div class="t">${tag(d.level)} ${esc(d.txt)}</div>
+      <div class="s">卡点：${esc(d.point)} · 跟进：${esc(d.next)}</div>
     </div></div>`).join('') : '<div class="empty">暂无台账，粘贴沟通记录后生成</div>';
 }
 function clearLedger(){store.set('ledger',[]);renderLedger();$('#ledPreview').style.display='none';}
@@ -1206,7 +1236,7 @@ function renderMoney(){
   $('#moneyList').innerHTML = recs.length? recs.map((r,i)=>`
     <div class="list-row"><div class="info">
       <div class="t">${names[r.cat]} · ¥${r.amt.toFixed(0)}</div>
-      <div class="s">${r.d} · ${r.note}</div>
+      <div class="s">${r.d} · ${esc(r.note)}</div>
     </div><button class="del" onclick="delMoney(${i})">删</button></div>`).join('')
     : '<div class="empty">暂无记录</div>';
 }
@@ -1275,7 +1305,7 @@ function renderMood(){
   const logs=store.get('mood',[]);
   $('#moodList').innerHTML = logs.length? logs.map(l=>`
     <div class="list-row" style="flex-direction:column;align-items:stretch">
-      <div class="info"><div class="t">${l.d}</div><div class="s">${l.t}</div></div>
+      <div class="info"><div class="t">${l.d}</div><div class="s">${esc(l.t)}</div></div>
       <div class="quote" style="margin:8px 0 0">🌿 ${l.r}</div>
     </div>`).join('') : '<div class="empty">树洞空空，今天有什么想说的？</div>';
 }
@@ -1299,6 +1329,45 @@ $('#content').addEventListener('scroll',e=>{$('#totop').style.display=e.target.s
 /* 初始化 */
 $('#verStamp').textContent = '📌更新 ' + BUILD_DATE;
 render('plan');
+
+/* ============ 数据备份：导出 / 导入 ============ */
+function exportData(){
+  const keys = ['plan_logs','ledger','money','mood','monthly_logs'];
+  const backup = {version:'1.0',exportedAt:new Date().toISOString(),data:{}};
+  keys.forEach(k=>{ backup.data[k] = store.get(k,null); });
+  const blob = new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `自律工作台备份_${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  $('#backupStatus').innerHTML = '<span style="color:#5a9e7e;font-weight:600">✅ 备份文件已下载！请保存到微信传输助手或网盘</span>';
+}
+
+function importData(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  if(!file.name.endsWith('.json')){$('#backupStatus').innerHTML='<span style="color:red">❌ 请选择 .json 备份文件</span>';return;}
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const backup = JSON.parse(e.target.result);
+      if(!backup.data){$('#backupStatus').innerHTML='<span style="color:red">❌ 无效的备份文件格式</span>';return;}
+      let count=0;
+      Object.keys(backup.data).forEach(k=>{
+        if(backup.data[k]!==null && backup.data[k]!==undefined){
+          store.set(k,backup.data[k]); count++;
+        }
+      });
+      $('#backupStatus').innerHTML = `<span style="color:#5a9e7e;font-weight:600">✅ 成功恢复 ${count} 项数据！页面即将刷新...</span>`;
+      setTimeout(()=>location.reload(),1500);
+    }catch(err){
+      $('#backupStatus').innerHTML = `<span style="color:red">❌ 文件解析失败：${err.message}</span>`;
+    }
+  };
+  reader.readAsText(file);
+  event.target.value=''; /* 允许重复选择同一文件 */
+}
 </script>
 </body>
 </html>
