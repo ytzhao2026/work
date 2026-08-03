@@ -407,8 +407,8 @@ const esc = s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g
    SUPABASE_URL 形如 https://xxxx.supabase.co
    SUPABASE_ANON_KEY 是 "anon public" 那串密钥
    填好后即可实现多设备云端同步；留空则仅本地保存。 */
-const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const SUPABASE_URL = 'https://znvkndipqlhshrmmaxmd.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_bb5W97uOAzRuoNDkuxYKXw_htkU8fYc';
 let SB = null;
 try {
   if (SUPABASE_URL && SUPABASE_URL.startsWith('http') && window.supabase) {
