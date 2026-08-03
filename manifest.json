@@ -1,1 +1,19 @@
-{"name": "自律工作台", "short_name": "自律工作台", "description": "个人自律工作台 H5 - 每日计划·商务英语·体态管理·阅读书单·记账存钱·心情树洞·月度复盘", "start_url": "/work/", "scope": "/work/", "display": "standalone", "orientation": "portrait", "background_color": "#f1f8f4", "theme_color": "#5a9e7e", "icons": [{"src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><circle cx='96' cy='96' r='88' fill='%235a9e7e'/><text x='96' y='120' font-size='100' text-anchor='middle' fill='white'>📋</text></svg>", "sizes": "any", "type": "image/svg+xml"}]}
+{
+  "name": "个人自律工作台",
+  "short_name": "自律工作台",
+  "description": "每日计划·商务英语·工作台账·体态管理·阅读书单·记账存钱·心情树洞·月度复盘·云端同步",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f1f8f4",
+  "theme_color": "#5a9e7e",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%235a9e7e'/><text x='96' y='128' font-size='100' text-anchor='middle' fill='white'>🌿</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

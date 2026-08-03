@@ -4,8 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5a9e7e">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="自律工作台">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%235a9e7e'/><text x='96' y='128' font-size='100' text-anchor='middle' fill='white'>🌿</text></svg>">
 <title>个人自律工作台</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     --green-50:#f1f8f4;
@@ -77,6 +82,12 @@
     width:38px;height:38px;border-radius:10px;font-size:18px;cursor:pointer;}
   .topbar h1{font-size:17px;margin:0;font-weight:700;color:var(--green-700);}
   .top-right{margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0;}
+  .sync-indicator{font-size:13px;line-height:1;cursor:default;transition:color .3s,opacity .3s;
+    background:var(--green-100);color:var(--green-500);padding:3px 8px;border-radius:20px;font-weight:600;white-space:nowrap;}
+  .sync-indicator[data-s="local"]{background:#eee;color:#888;}
+  .sync-indicator[data-s="syncing"]{background:#fff4d6;color:#c98a00;}
+  .sync-indicator[data-s="online"]{background:#e3f1ea;color:#2e8b57;}
+  .sync-indicator[data-s="error"]{background:#fde2e2;color:#c0392b;}
   .topbar .date{font-size:12px;color:var(--muted);}
   .topbar .ver{font-size:10.5px;color:var(--green-600);background:var(--green-100);
     padding:2px 7px;border-radius:20px;font-weight:600;white-space:nowrap;}
@@ -89,6 +100,14 @@
   .section-sub{font-size:12.5px;color:var(--muted);margin:0 0 12px;}
   .pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;
     background:var(--green-100);color:var(--green-600);margin-left:6px;}
+  .fold-toggle{display:block;width:100%;margin-top:10px;padding:9px;background:var(--green-50);
+    border:1px dashed var(--green-300);border-radius:10px;color:var(--green-600);
+    font-size:13px;cursor:pointer;text-align:center;}
+  .autosave-tip{font-size:12px;color:var(--green-600);align-self:center;}
+  .history-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);}
+  .history-item:last-child{border-bottom:none;}
+  .hist-date{flex:0 0 78px;font-size:12px;color:var(--muted);padding-top:2px;font-weight:600;}
+  .hist-content{flex:1;font-size:13.5px;line-height:1.7;white-space:pre-wrap;word-break:break-word;}
 
   .tag{display:inline-block;font-size:11px;padding:2px 9px;border-radius:20px;font-weight:600;}
   .tag-a{background:#fde8e8;color:#c0392b;}
@@ -357,6 +376,7 @@
       <button class="menu-btn" id="menuBtn">☰</button>
       <h1 id="pageTitle">每日计划</h1>
       <span class="top-right">
+        <span class="sync-indicator" id="syncDot" title="同步状态">●</span>
         <span class="ver" id="verStamp"></span>
       </span>
     </div>
@@ -371,6 +391,7 @@ const $ = (s,el=document)=>el.querySelector(s);
 const $$ = (s,el=document)=>[...el.querySelectorAll(s)];
 const todayStr = ()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
 const monthStr = ()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;};
+const dateStr = d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const weekOfYear = ()=>{const d=new Date();const onejan=new Date(d.getFullYear(),0,1);
   const daynum=Math.floor((d-onejan)/(24*3600*1000));return Math.ceil((daynum+onejan.getDay()+1)/7);};
 const weekdayCN = ()=>{const g=new Date().getDay();return g===0?7:g;};
@@ -378,12 +399,118 @@ const dayOfYear = ()=>{const d=new Date();const start=new Date(d.getFullYear(),0
   return Math.floor((d-start)/(24*3600*1000));};
 const monthOfYear = ()=>new Date().getMonth(); /* 0-11 */
 const WD = ['','周一','周二','周三','周四','周五','周六','周日'];
-const BUILD_DATE = '2026-08-01'; /* 工作台代码版本，每次重大更新时修改此日期 */
+const BUILD_DATE = '2026-08-03'; /* 工作台代码版本，每次重大更新时修改此日期 */
 const esc = s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+/* ============ Supabase 云端同步配置 ============ */
+/* ⚠️ 填入你的 Supabase 项目信息（Supabase 后台 → Project Settings → API）：
+   SUPABASE_URL 形如 https://xxxx.supabase.co
+   SUPABASE_ANON_KEY 是 "anon public" 那串密钥
+   填好后即可实现多设备云端同步；留空则仅本地保存。 */
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+let SB = null;
+try {
+  if (SUPABASE_URL && SUPABASE_URL.startsWith('http') && window.supabase) {
+    SB = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+} catch (e) { console.warn('[SB] 初始化失败（将仅使用本地存储）', e); }
+
+/* 连接状态：local(仅本地) / syncing(同步中) / online(已连云端) / error(同步失败) */
+const Sync = {
+  status: 'local',
+  _cb: [],
+  set(s){ if(this.status===s) return; this.status=s; this._cb.forEach(f=>{try{f(s)}catch(e){}}); },
+  on(f){ this._cb.push(f); }
+};
+
+/* 防抖同步队列：多次写入合并为一次云端提交 */
+let _syncTimer = null;
+const _dirty = {};
+
 const store = {
   get(k,def){try{const v=localStorage.getItem('zlt_'+k);return v?JSON.parse(v):def;}catch(e){return def;}},
-  set(k,v){try{localStorage.setItem('zlt_'+k,JSON.stringify(v));}catch(e){console.warn('[store] 保存失败:',k,e);alert('⚠️ 存储空间已满，请清理浏览器缓存后重试');}}
+  set(k,v){
+    try{localStorage.setItem('zlt_'+k,JSON.stringify(v));}catch(e){console.warn('[store] 本地保存失败',k,e);}
+    _dirty[k]=v;
+    scheduleSync();
+  }
 };
+
+function scheduleSync(){
+  if(!SB){Sync.set('local');return;}
+  Sync.set('syncing');
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(flushCloud,700);
+}
+
+async function flushCloud(){
+  if(!SB) return;
+  try{
+    const data={};
+    Object.keys(_dirty).forEach(k=>{data[k]=JSON.stringify(_dirty[k]);});
+    if(Object.keys(data).length===0) return;
+    const {error} = await SB.from('workbench_data').upsert({
+      uid:'default_user',
+      payload:data,
+      updated_at:new Date().toISOString()
+    });
+    if(error) throw error;
+    Object.keys(_dirty).forEach(k=>delete _dirty[k]);
+    Sync.set('online');
+  }catch(e){
+    console.warn('[sync] 云端写入失败',e);
+    Sync.set('error');
+  }
+}
+
+async function pullCloud(){
+  if(!SB) return false;
+  try{
+    const {data,error} = await SB.from('workbench_data').select('payload').eq('uid','default_user').single();
+    if(error) throw error;
+    if(data && data.payload){
+      Object.keys(data.payload).forEach(k=>{
+        try{
+          const cloud = JSON.parse(data.payload[k]);
+          const local = store.get(k,null);
+          /* 云端优先：本地无数据或为空时采用云端 */
+          if(local===null || (Array.isArray(local)&&local.length===0) || local==='' || local===null){
+            store.set(k,cloud);
+          }
+        }catch(e){console.warn('[sync] 解析失败',k,e);}
+      });
+      Sync.set('online');
+      return true;
+    }
+  }catch(e){console.warn('[sync] 云端读取失败',e);Sync.set('error');}
+  return false;
+}
+
+/* ============ 打卡系统 ============ */
+/* 打卡记录结构：checkins = { plan:{ '2026-08-03': ISO时间 }, english:{...}, body:{...} } */
+function checkinState(module){
+  const today = todayStr();
+  const c = store.get('checkins',{});
+  const done = !!(c[module] && c[module][today]);
+  let streak = 0; const d = new Date();
+  while(c[module] && c[module][dateStr(d)]){ streak++; d.setDate(d.getDate()-1); }
+  return {done, streak};
+}
+function checkinBtnHtml(module){
+  const {done, streak} = checkinState(module);
+  return done ? `✅ 今日已打卡${streak>1?' · 连续'+streak+'天':''}` : '○ 打卡今日完成';
+}
+function toggleCheckin(module){
+  const today = todayStr();
+  const c = store.get('checkins',{});
+  if(!c[module]) c[module] = {};
+  if(c[module][today]) delete c[module][today];
+  else c[module][today] = new Date().toISOString();
+  store.set('checkins', c);
+  const btn = $('#'+module+'CheckinBtn');
+  if(btn) btn.outerHTML = `<button class="btn ghost sm" id="${module}CheckinBtn" onclick="toggleCheckin('${module}')">${checkinBtnHtml(module)}</button>`;
+}
 
 /* ============ 内置数据（离线兜底，无需网络） ============ */
 const BUILTIN_DATA = {
@@ -645,14 +772,7 @@ const views = {
     const logs = store.get('plan_logs',[]);
     const saved = logs.find(l=>l.d===today);
     const defs = saved ? saved.items : cur.items.map(it=>it[1]);
-    const hist = logs.length ? logs.map((l,i)=>`
-      <div class="history-item">
-        <span class="hist-date">${l.d}</span>
-        <div class="hist-content">① ${esc(l.items[0]||'—')}
-② ${esc(l.items[1]||'—')}
-③ ${esc(l.items[2]||'—')}</div>
-        <button class="del" onclick="delPlanLog(${i})">删</button>
-      </div>`).join('') : '<div class="empty">还没有历史计划，保存今天的第一份吧</div>';
+    const hist = renderPlanHistory(logs);
 
     return `
     <div class="card fade">
@@ -666,21 +786,22 @@ const views = {
       <div class="section-sub">默认带入今日模板，可自由改写成你自己的三件事，保存后进入历史</div>
       <div class="input-group">
         <label>第①件事（销售攻坚）</label>
-        <textarea id="p1" rows="2">${esc(defs[0]||'')}</textarea>
+        <textarea id="p1" rows="2" oninput="autoSavePlan()">${esc(defs[0]||'')}</textarea>
         <label>第②件事（能力提升）</label>
-        <textarea id="p2" rows="2">${esc(defs[1]||'')}</textarea>
+        <textarea id="p2" rows="2" oninput="autoSavePlan()">${esc(defs[1]||'')}</textarea>
         <label>第③件事（自我管理）</label>
-        <textarea id="p3" rows="2">${esc(defs[2]||'')}</textarea>
+        <textarea id="p3" rows="2" oninput="autoSavePlan()">${esc(defs[2]||'')}</textarea>
       </div>
       <div class="btn-row">
-        <button class="save-btn" onclick="savePlan()">💾 保存今日计划</button>
+        <button class="save-btn" onclick="savePlan()">💾 立即保存</button>
+        <span class="autosave-tip" id="autoSaveTip"></span>
       </div>
     </div>
 
     <div class="card fade">
       <div class="section-title">📋 历史计划 <span class="pill">共${logs.length}天</span></div>
       <div class="section-sub">过往每天的三件事，随时回看执行轨迹</div>
-      <div class="history-list">${hist}</div>
+      <div class="history-list" id="planHistory">${hist}</div>
     </div>
 
     <div class="card fade">
@@ -689,7 +810,7 @@ const views = {
       <div class="quote" id="planPrompt">${prompt}</div>
       <div class="btn-row">
         <button class="btn sm" onclick="copyText('planPrompt')">📋 复制复盘指令</button>
-        <button class="btn ghost sm" onclick="alert('已记录：${WD[wd]}三件事打卡完成 ✅')">✅ 标记今日完成</button>
+        <button class="btn ghost sm" id="planCheckinBtn" onclick="toggleCheckin('plan')">${checkinBtnHtml('plan')}</button>
       </div>
     </div>`;
   },
@@ -757,6 +878,13 @@ const views = {
       <div class="section-sub">场景演练：${c.theme}，先听客户问，再照着答</div>
       ${dia}
       <div class="btn-row"><button class="btn sm" onclick="speak('${qSafe}')">🔊 听客户提问</button></div>
+    </div>
+    <div class="card fade">
+      <div class="section-title">✅ 今日英语打卡</div>
+      <div class="section-sub">完成今日跟读后点击打卡，连续打卡看进步</div>
+      <div class="btn-row">
+        <button class="btn ghost sm" id="englishCheckinBtn" onclick="toggleCheckin('english')">${checkinBtnHtml('english')}</button>
+      </div>
     </div>`;
   },
 
@@ -992,6 +1120,14 @@ const views = {
       <input id="bm" type="number" step="0.1" placeholder="如 24.1">
       <div class="btn-row"><button class="btn" onclick="bodyAnalyze()">📈 生成下周微调</button></div>
       <div id="bodyOut"></div>
+    </div>
+
+    <div class="card fade">
+      <div class="section-title">✅ 今日体态打卡</div>
+      <div class="section-sub">完成今日跟练后点击打卡，连续打卡看进步</div>
+      <div class="btn-row">
+        <button class="btn ghost sm" id="bodyCheckinBtn" onclick="toggleCheckin('body')">${checkinBtnHtml('body')}</button>
+      </div>
     </div>`;
   },
 
@@ -1155,17 +1291,66 @@ function openExternal(url){
   if(!w){alert('浏览器拦截了新窗口，请允许弹窗后重试。');}
 }
 
-/* 每日计划：保存 + 历史 */
+/* 每日计划：自动保存（防抖，不刷新页面避免失焦） */
+let _planTimer = null;
+function autoSavePlan(){
+  const tip = $('#autoSaveTip');
+  if(tip) tip.textContent = '✏️ 输入中…';
+  clearTimeout(_planTimer);
+  _planTimer = setTimeout(()=>{
+    const items = [$('#p1').value.trim(), $('#p2').value.trim(), $('#p3').value.trim()];
+    if(!items[0] && !items[1] && !items[2]) return;
+    const logs = store.get('plan_logs',[]);
+    const today = todayStr();
+    const idx = logs.findIndex(l=>l.d===today);
+    if(idx>=0) logs[idx].items = items; else logs.unshift({d:today, items});
+    store.set('plan_logs',logs);
+    if(tip) tip.textContent = '✅ 已自动保存 '+new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+    updatePlanHistory();
+  }, 600);
+}
+function planHistoryItem(l,i){
+  return `<div class="history-item">
+    <span class="hist-date">${l.d}</span>
+    <div class="hist-content">① ${esc(l.items[0]||'—')}
+② ${esc(l.items[1]||'—')}
+③ ${esc(l.items[2]||'—')}</div>
+    <button class="del" onclick="delPlanLog(${i})">删</button>
+  </div>`;
+}
+function renderPlanHistory(logs){
+  if(!logs.length) return '<div class="empty">还没有历史计划，保存今天的第一份吧</div>';
+  const recent = logs.slice(0,5);
+  const older = logs.slice(5);
+  let html = recent.map((l,i)=>planHistoryItem(l,i)).join('');
+  if(older.length){
+    html += `<div id="planOlder" style="display:none">${older.map((l,i)=>planHistoryItem(l,i+5)).join('')}</div>
+    <button class="fold-toggle" data-label="查看 ${older.length} 天更早历史 ▾" onclick="toggleFold('planOlder',this)">查看 ${older.length} 天更早历史 ▾</button>`;
+  }
+  return html;
+}
+function toggleFold(id, btn){
+  const el = $('#'+id); if(!el) return;
+  const hidden = el.style.display === 'none';
+  el.style.display = hidden ? 'block' : 'none';
+  btn.textContent = hidden ? '收起 ▴' : btn.dataset.label;
+}
+function updatePlanHistory(){
+  const logs = store.get('plan_logs',[]);
+  const el = $('#planHistory'); if(!el) return;
+  el.innerHTML = renderPlanHistory(logs);
+}
+/* 每日计划：手动保存（立即同步） */
 function savePlan(){
   const items = [$('#p1').value.trim(), $('#p2').value.trim(), $('#p3').value.trim()];
   if(!items[0] && !items[1] && !items[2]){alert('至少写一件事再保存');return;}
   const logs = store.get('plan_logs',[]);
   const today = todayStr();
   const idx = logs.findIndex(l=>l.d===today);
-  if(idx>=0) logs[idx].items = items;
-  else logs.unshift({d:today, items});
+  if(idx>=0) logs[idx].items = items; else logs.unshift({d:today, items});
   store.set('plan_logs',logs);
-  render('plan');
+  updatePlanHistory();
+  const tip = $('#autoSaveTip'); if(tip) tip.textContent = '✅ 已保存';
 }
 function delPlanLog(i){
   const logs = store.get('plan_logs',[]);
@@ -1328,7 +1513,17 @@ $('#content').addEventListener('scroll',e=>{$('#totop').style.display=e.target.s
 
 /* 初始化 */
 $('#verStamp').textContent = '📌更新 ' + BUILD_DATE;
+
+/* 连接状态标识 */
+const syncDot = $('#syncDot');
+const syncText = {local:'仅本地',syncing:'同步中…',online:'已连云端',error:'同步失败'};
+function updateSyncDot(s){ syncDot.dataset.s=s; syncDot.textContent='● '+syncText[s]; }
+Sync.on(updateSyncDot);
+updateSyncDot(Sync.status);
+
+/* 先渲染本地数据，若已配置 Supabase 则从云端拉取最新数据后刷新 */
 render('plan');
+if(SB){ pullCloud().then(()=>{ const k=$('.nav-item.active')?.dataset.key; if(k) render(k); }); }
 
 /* ============ 数据备份：导出 / 导入 ============ */
 function exportData(){
@@ -1367,6 +1562,14 @@ function importData(event){
   };
   reader.readAsText(file);
   event.target.value=''; /* 允许重复选择同一文件 */
+}
+
+/* ============ Service Worker 注册（离线缓存，提升主屏 App 稳定性） ============ */
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js').then(r=>console.log('[SW] 已注册',r.scope))
+      .catch(e=>console.warn('[SW] 注册失败',e));
+  });
 }
 </script>
 </body>

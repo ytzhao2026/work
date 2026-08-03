@@ -1,38 +1,37 @@
-/* 自律工作台 - 离线缓存 Service Worker */
-const CACHE = 'zilv-workbench-v1';
-const PRECACHE = ['./index.html'];
+/* 自律工作台 - Service Worker：离线缓存应用外壳 */
+const CACHE = 'zilv-workbench-v2';
+const PRECACHE = ['./', './index.html', './manifest.json', './sw.js'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(PRECACHE))
-  );
-  self.skipWaiting();
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(PRECACHE)).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys => keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', e => {
-  // 只处理 GET 请求，且只处理同源请求
-  if (e.request.method !== 'GET') return;
-  if (!e.request.url.startsWith(self.location.origin)) return;
-
+  const req = e.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  /* 跨域请求（如 Supabase、CDN）走网络优先，失败回退缓存 */
+  if (url.origin !== self.location.origin) {
+    e.respondWith(fetch(req).catch(() => caches.match(req)));
+    return;
+  }
+  /* 同源：先缓存，后台更新 */
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      // 有缓存直接返回，同时后台更新
-      const fetchPromise = fetch(e.request).then(resp => {
+    caches.match(req).then(cached => {
+      const net = fetch(req).then(resp => {
         if (resp && resp.status === 200) {
-          const clone = resp.clone();
-          caches.open(CACHE).then(cache => cache.put(e.request, clone));
+          const copy = resp.clone();
+          caches.open(CACHE).then(c => c.put(req, copy));
         }
         return resp;
-      }).catch(() => cached); // 网络失败时回退到缓存
-
-      return cached || fetchPromise;
+      }).catch(() => cached);
+      return cached || net;
     })
   );
 });
