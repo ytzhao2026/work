@@ -1,16 +1,25 @@
 # 自律工作台 · 部署与配置说明
 
-## ⚠️ 重要：托管地址说明
+## ✅ 永久访问地址（国内可达，已验证）
 
-`github.io` 域名在国内网络下经常不可达（"已丢失网络连接"的根因）。
-**要稳定打开，请用下方「当前可用地址」或部署到国内可达平台（见末尾）。**
+```
+https://willowy-seahorse-ff9b2d.netlify.app/
+```
 
-## 当前可用地址（Cloudflare 隧道，沙箱在线时可用）
-```
-https://bennett-fly-replica-comes.trycloudflare.com
-```
-- Cloudflare 域名，国内通常可达，已接入最新版（含打卡/同步/折叠）
-- 沙箱休眠后隧道可能断开，需要时重新生成链接即可
+- Netlify 托管，国内稳定可达，不会 404 / 认证失败
+- 已接入 Supabase 云端同步 + 打卡 + 自动保存 + 历史折叠 + PWA
+- 代码仓库：https://github.com/ytzhao2026/work（推送即自动重新部署）
+
+## 手机安装到主屏幕
+1. Safari 打开上面的 Netlify 地址
+2. 点底部 ⬆ 分享 → 「添加到主屏幕」→ 名称「自律工作台」
+3. 以后从主屏图标打开即为 APP 形式，离线也能用（Service Worker 缓存）
+
+## 云端同步说明
+- 顶栏标识：`● 仅本地 / ● 同步中 / ● 已连云端 / ● 同步失败`
+- 数据自动存本地 + 防抖同步到 Supabase（多设备共享）
+- 若手机网络暂不可达 Supabase，显示「同步失败」但本地数据不丢，联网后自动补传
+- Supabase 项目：znvkndipqlhshrmmaxmd.supabase.co（表 workbench_data）
 
 ## 功能清单（本次升级）
 - ✅ PWA 可安装到主屏（manifest + Service Worker 离线缓存）
