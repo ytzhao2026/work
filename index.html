@@ -823,9 +823,10 @@ const views = {
       <div class="section-title">🗂️ 工作台账 <span class="pill">A/B/C 意向分级</span></div>
       <div class="section-sub">粘贴客户沟通内容，自动归类意向等级、标记卡点、跟进时间与话术</div>
       <label>① 粘贴客户沟通记录（可多段，用空行分隔不同客户）</label>
-      <textarea id="ledIn" rows="5" placeholder="例：&#10;客户王总，制造业，想换供应商但担心迁移成本，决策要等8月预算批复，计划两周后回访。&#10;&#10;客户李经理，已试用两周，对价格敏感，想再砍8%，本周五前给答复。"></textarea>
+      <textarea id="ledIn" rows="5" placeholder="例：&#10;客户王总，制造业，想换供应商但担心迁移成本，决策要等8月预算批复，计划两周后回访。&#10;&#10;客户李经理，已试用两周，对价格敏感，想再砍8%，本周五前给答复。" oninput="autoAnalyzeLedger()"></textarea>
       <div class="btn-row">
         <button class="btn" onclick="analyzeLedger()">⚙️ 智能归类生成台账</button>
+        <span class="autosave-tip" id="ledgerSaveTip"></span>
       </div>
     </div>
 
@@ -974,10 +975,10 @@ const views = {
         <option value="per">个人日常开支</option>
       </select>
       <label>金额（元）</label>
-      <input id="mAmt" type="number" inputmode="decimal" placeholder="如 88">
+      <input id="mAmt" type="number" inputmode="decimal" placeholder="如 88" onkeydown="if(event.key==='Enter'){event.preventDefault();addMoney();}">
       <label>备注</label>
-      <input id="mNote" placeholder="如 客户晚宴 / 打车去机场 / 午餐">
-      <div class="btn-row"><button class="btn" onclick="addMoney()">➕ 记一笔</button></div>
+      <input id="mNote" placeholder="如 客户晚宴 / 打车去机场 / 午餐" onkeydown="if(event.key==='Enter'){event.preventDefault();addMoney();}">
+      <div class="btn-row"><button class="btn" onclick="addMoney()">➕ 记一笔</button><span class="autosave-tip">输完按回车即可保存</span></div>
     </div>
 
     <div class="card fade">
@@ -1015,6 +1016,7 @@ const views = {
        alt:'林芊妤｜10分钟睡前放松拉伸', ak:'林芊妤 睡前拉伸'}
     ];
     const f = FOCUS[wn % 4];
+    const bmData = store.get('body_metrics',{bf:0,bw:0,bm:0});
     return `
     <div class="card fade">
       <div class="section-title">🧘 居家无器械训练计划</div>
@@ -1113,12 +1115,12 @@ const views = {
       <div class="section-title">🩺 周日 OKOK 体脂分析与下周微调</div>
       <div class="section-sub">填入本周体脂数据，自动给下周运动微调建议</div>
       <div class="grid2">
-        <div><label>体脂率 %</label><input id="bf" type="number" step="0.1" placeholder="如 22.5"></div>
-        <div><label>体重 kg</label><input id="bw" type="number" step="0.1" placeholder="如 56.2"></div>
+        <div><label>体脂率 %</label><input id="bf" type="number" step="0.1" placeholder="如 22.5" value="${bmData.bf || ''}" oninput="autoSaveBody()"></div>
+        <div><label>体重 kg</label><input id="bw" type="number" step="0.1" placeholder="如 56.2" value="${bmData.bw || ''}" oninput="autoSaveBody()"></div>
       </div>
       <label>肌肉量 kg（选填）</label>
-      <input id="bm" type="number" step="0.1" placeholder="如 24.1">
-      <div class="btn-row"><button class="btn" onclick="bodyAnalyze()">📈 生成下周微调</button></div>
+      <input id="bm" type="number" step="0.1" placeholder="如 24.1" value="${bmData.bm || ''}" oninput="autoSaveBody()">
+      <div class="btn-row"><button class="btn" onclick="bodyAnalyze()">📈 生成下周微调</button><span class="autosave-tip" id="bodySaveTip"></span></div>
       <div id="bodyOut"></div>
     </div>
 
@@ -1136,13 +1138,14 @@ const views = {
     const logs = store.get('mood',[]);
     return `
     <div class="card fade">
-      <div class="section-title">💬 心情树洞 <span class="pill">仅本地留存</span></div>
+      <div class="section-title">💬 心情树洞 <span class="pill">本地+云端</span></div>
       <div class="section-sub">职场压力、客户受挫，写完就轻一点。不做评判，只给理性转念。</div>
       <label>今天压着你的是什么？</label>
-      <textarea id="moodIn" rows="4" placeholder="例：跟了三周的客户被竞品低价截胡，心里堵，怀疑自己方法有问题。"></textarea>
+      <textarea id="moodIn" rows="4" placeholder="例：跟了三周的客户被竞品低价截胡，心里堵，怀疑自己方法有问题。" onkeydown="if(event.key==='Enter' && (event.ctrlKey || event.metaKey)){event.preventDefault();addMood();}"></textarea>
       <div class="btn-row">
         <button class="btn" onclick="addMood()">🌱 倾诉并获取转念</button>
         <button class="btn ghost sm" onclick="clearMood()">🗑️ 清空</button>
+        <span class="autosave-tip">Ctrl+Enter 发送</span>
       </div>
       <div id="moodOut"></div>
     </div>
@@ -1203,14 +1206,15 @@ const views = {
       <div class="section-sub">四项关键指标，月底填一次，仪表盘和历史自动更新</div>
       <div class="input-group">
         <div class="grid2">
-          <div><label>销售完成度 %</label><input id="mSale" type="number" inputmode="decimal" placeholder="如 85" value="${cur?cur.sale:''}"></div>
-          <div><label>英语打卡天数（目标22天）</label><input id="mEng" type="number" inputmode="numeric" placeholder="如 18" value="${cur?cur.eng:''}"></div>
-          <div><label>体脂率 %</label><input id="mBf" type="number" step="0.1" inputmode="decimal" placeholder="如 22.5" value="${cur?cur.bf:''}"></div>
-          <div><label>自律执行率 %</label><input id="mExec" type="number" inputmode="decimal" placeholder="如 80" value="${cur?cur.exec:''}"></div>
+          <div><label>销售完成度 %</label><input id="mSale" type="number" inputmode="decimal" placeholder="如 85" value="${cur?cur.sale:''}" oninput="autoSaveMonthly()"></div>
+          <div><label>英语打卡天数（目标22天）</label><input id="mEng" type="number" inputmode="numeric" placeholder="如 18" value="${cur?cur.eng:''}" oninput="autoSaveMonthly()"></div>
+          <div><label>体脂率 %</label><input id="mBf" type="number" step="0.1" inputmode="decimal" placeholder="如 22.5" value="${cur?cur.bf:''}" oninput="autoSaveMonthly()"></div>
+          <div><label>自律执行率 %</label><input id="mExec" type="number" inputmode="decimal" placeholder="如 80" value="${cur?cur.exec:''}" oninput="autoSaveMonthly()"></div>
         </div>
       </div>
       <div class="btn-row">
         <button class="save-btn" onclick="saveMonthly()">💾 保存本月复盘</button>
+        <span class="autosave-tip" id="monthlySaveTip"></span>
       </div>
     </div>
 
@@ -1239,8 +1243,8 @@ const views = {
     <div class="card">
       <div class="section-title">💾 数据备份与恢复</div>
       <p style="color:#666;font-size:13px;margin-bottom:12px;line-height:1.6">
-        你的所有数据都保存在<strong>手机浏览器本地</strong>。换设备、清缓存或从不同地址打开会导致数据丢失。<br>
-        建议每周导出一次备份文件，存到微信文件传输助手或网盘。
+        数据已<strong>自动保存在本地 + 实时同步到 Supabase 云端</strong>。换设备打开同一地址可自动恢复；清缓存后只要联网也能从云端拉回。<br>
+        建议每月导出一次 JSON 备份，作为额外兜底。
       </p>
       <div style="background:#f8faf8;border-radius:10px;padding:12px;margin:12px 0">
         <div style="font-size:12px;color:#888;margin-bottom:6px">📊 当前存储概况</div>
@@ -1359,6 +1363,20 @@ function delPlanLog(i){
   render('plan');
 }
 
+/* 台账：粘贴后自动归类 */
+let _ledgerTimer = null;
+function autoAnalyzeLedger(){
+  const tip = $('#ledgerSaveTip');
+  const raw = $('#ledIn').value.trim();
+  if(!raw){ if(tip) tip.textContent=''; return; }
+  if(tip) tip.textContent = '✏️ 检测输入中…';
+  clearTimeout(_ledgerTimer);
+  _ledgerTimer = setTimeout(()=>{
+    analyzeLedger();
+    if(tip) tip.textContent = '✅ 已自动生成台账';
+  },1200);
+}
+
 /* 台账：简易智能归类 */
 function analyzeLedger(){
   const raw = $('#ledIn').value.trim();
@@ -1426,6 +1444,38 @@ function renderMoney(){
     : '<div class="empty">暂无记录</div>';
 }
 function delMoney(i){const recs=store.get('money',[]);recs.splice(i,1);store.set('money',recs);renderMoney();}
+
+/* 体态：自动保存输入 */
+let _bodyTimer = null;
+function autoSaveBody(){
+  clearTimeout(_bodyTimer);
+  const tip = $('#bodySaveTip'); if(tip) tip.textContent = '✏️ 输入中…';
+  _bodyTimer = setTimeout(()=>{
+    const bf=parseFloat($('#bf').value)||0, bw=parseFloat($('#bw').value)||0, bm=parseFloat($('#bm').value)||0;
+    if(!bf && !bw && !bm) return;
+    store.set('body_metrics',{bf,bw,bm,updated:new Date().toISOString()});
+    if(tip) tip.textContent = '✅ 已自动保存';
+  },600);
+}
+
+/* 月度复盘：自动保存（不刷新页面避免失焦） */
+let _monthlyTimer = null;
+function autoSaveMonthly(){
+  clearTimeout(_monthlyTimer);
+  const tip = $('#monthlySaveTip'); if(tip) tip.textContent = '✏️ 输入中…';
+  _monthlyTimer = setTimeout(()=>{
+    const sale=parseFloat($('#mSale').value), eng=parseFloat($('#mEng').value),
+          bf=parseFloat($('#mBf').value), exec=parseFloat($('#mExec').value);
+    if(isNaN(sale)&&isNaN(eng)&&isNaN(bf)&&isNaN(exec)) return;
+    const logs = store.get('monthly_logs',[]);
+    const ym = monthStr();
+    const rec = { ym, sale:isNaN(sale)?0:sale, eng:isNaN(eng)?0:eng, bf:isNaN(bf)?0:bf, exec:isNaN(exec)?0:exec };
+    const idx = logs.findIndex(l=>l.ym===ym);
+    if(idx>=0) logs[idx] = rec; else logs.unshift(rec);
+    store.set('monthly_logs',logs);
+    if(tip) tip.textContent = '✅ 已自动保存';
+  },600);
+}
 
 /* 体态分析 */
 function bodyAnalyze(){
